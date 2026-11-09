@@ -3,6 +3,7 @@
 #include "Source/Engine/Scene/GameObject.h"
 #include "Source/Game/Objects/Ground.h"
 #include "Source/Game/Objects/Goal.h"
+#include "Source/Game/Objects/PrimitiveObject.h"
 
 #include <memory>
 
@@ -24,6 +25,12 @@ unique_ptr<GameObject> GameObjectFactory::Create(
 		return unique_ptr<GameObject>(new Goal());
 	}
 
+	// 基本図形オブジェクト
+	if (type == "Primitive")
+	{
+		return unique_ptr<GameObject>(new PrimitiveObject());
+	}
+
 	// 未対応の種類
 	return nullptr;
 }
@@ -41,6 +48,12 @@ string GameObjectFactory::GetTypeName(
 	if (dynamic_cast<const Goal*>(&object))
 	{
 		return "Goal";
+	}
+
+	// Primitiveを取得
+	if (dynamic_cast<const PrimitiveObject*>(&object))
+	{
+		return "Primitive";
 	}
 
 	// 未対応の種類
@@ -74,6 +87,16 @@ unique_ptr<GameObject> GameObjectFactory::CreateForEditor(
 		transform.scale[0] = 0.5f;
 		transform.scale[1] = 0.5f;
 		transform.scale[2] = 0.5f;
+	}
+	else if (type == "Primitive")
+	{
+		transform.position[0] = 0.0f;
+		transform.position[1] = 1.0f;
+		transform.position[2] = 0.0f;
+
+		transform.scale[0] = 1.0f;
+		transform.scale[1] = 1.0f;
+		transform.scale[2] = 1.0f;
 	}
 
 	return pObject;

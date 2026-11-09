@@ -4,8 +4,9 @@
 #include "Source/Engine/Scene/GameObject.h"
 #include "Source/Engine/Camera/CameraPlay.h"
 
-#include "Source/Game/Objects/GameObjectFactory.h"
 #include "Source/Game/Serialization/SceneSerializer.h"
+#include "Source/Game/Objects/GameObjectFactory.h"
+#include "Source/Game/Objects/PrimitiveObject.h"
 
 #include <utility>
 #include <string>
@@ -81,6 +82,61 @@ SceneEditResult SceneEditActions::Execute(
 			result.error =
 				"Failed to create GameObject: " + type;
 		}
+
+		break;
+	}
+
+	//========================================
+	// Šî–{}Œ`‚ÌV‹K¶¬
+	//========================================
+	case EditorAction::CreateBox:
+	case EditorAction::CreateCylinder:
+	case EditorAction::CreateSphere:
+	{
+		// ¶¬‚·‚é}Œ`‚Ìí—Ş
+		PrimitiveShape shape = PrimitiveShape::Box;
+
+		// ¶¬‚ÌŠî–{–¼
+		string name = "Box";
+
+		if (command.action == EditorAction::CreateCylinder)
+		{
+			shape = PrimitiveShape::Cylinder;
+			name = "Cylinder";
+		}
+		else if (command.action == EditorAction::CreateSphere)
+		{
+			shape = PrimitiveShape::Sphere;
+			name = "Sphere";
+		}
+
+		// Factory‚©‚çPrimitive‚ğ¶¬
+		pNewObject =
+			GameObjectFactory::CreateForEditor("Primitive");
+
+		if (!pNewObject)
+		{
+			result.error =
+				"Failed to create PrimitiveObject.";
+			break;
+		}
+
+		// PrimitiveObject‚Æ‚µ‚Äæ“¾
+		PrimitiveObject* pPrimitive =
+			dynamic_cast<PrimitiveObject*>(pNewObject.get());
+
+		if (!pPrimitive)
+		{
+			result.error =
+				"Create object is not PrimitiveObject.";
+
+			pNewObject.reset();
+			break;
+		}
+
+		// Œp³‚Æ–¼‘O‚ğİ’è
+		pPrimitive->SetShape(shape);
+		pPrimitive->SetName(name);
 
 		break;
 	}

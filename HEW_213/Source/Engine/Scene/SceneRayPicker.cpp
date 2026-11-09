@@ -5,6 +5,8 @@
 #include "Source/Engine/Scene/GameObject.h"
 #include "Source/Engine/Camera/Camera.h"
 
+#include "Source/Game/Objects/PrimitiveObject.h"
+
 #include <DirectXMath.h>
 #include <DirectXCollision.h>
 
@@ -98,6 +100,11 @@ int SceneRayPicker::Pick(
 		XMFLOAT3(0.5f, 0.5f, 0.5f)
 	);
 
+	BoundingSphere localSphere(
+		XMFLOAT3(0.0f, 0.0f, 0.0f),
+		0.5f
+	);
+
 	for (int i = 0;
 		i < static_cast<int>(objects.size());
 		++i)
@@ -145,9 +152,36 @@ int SceneRayPicker::Pick(
 			XMVector3Normalize(localDirection);
 
 		//========================================
-		// Ray‚ÆBox‚ÌŒğ·”»’è
+		// Œ`ó‚É‰‚¶‚½Œğ·”»’è
 		//========================================
 		float hitDistance = 0.0f;
+		bool isHit = false;
+
+		// PrimitiveObject‚©‚Ç‚¤‚©’²‚×‚é
+		const PrimitiveObject* pPrimitive =
+			dynamic_cast<const PrimitiveObject*>(pObject);
+
+		// ‹…‚Ìê‡‚ÍBoundingSphere‚Å”»’è
+		if (pPrimitive && pPrimitive->GetShape() == PrimitiveShape::Sphere)
+		{
+			isHit = localSphere.Intersects(
+				localNear,
+				localDirection,
+				hitDistance
+			);
+		}
+		else
+		{
+			// BoxECylinderE]—ˆ‚ÌGround/Goal
+			isHit = localBox.Intersects(
+				localNear,
+				localDirection,
+				hitDistance
+			);
+		}
+
+		// ‰½‚à“–‚½‚ç‚È‚©‚Á‚½ê‡
+		if (!isHit) continue;
 
 		if (!localBox.Intersects(
 			localNear,

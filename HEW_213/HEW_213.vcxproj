@@ -206,6 +206,7 @@
     <ClCompile Include="Source\Game\Objects\GameObjectFactory.cpp" />
     <ClCompile Include="Source\Game\Objects\Goal.cpp" />
     <ClCompile Include="Source\Game\Objects\Ground.cpp" />
+    <ClCompile Include="Source\Game\Objects\PrimitiveObject.cpp" />
     <ClCompile Include="Source\Game\Scenes\SceneGame.cpp" />
     <ClCompile Include="Source\Game\Serialization\SceneSerializer.cpp" />
   </ItemGroup>
@@ -256,6 +257,7 @@
     <ClInclude Include="Source\Engine\Graphics\Geometory.h" />
     <ClInclude Include="Source\Engine\Graphics\Model.h" />
     <ClInclude Include="Source\Engine\Graphics\ModelManager.h" />
+    <ClInclude Include="Source\Engine\Graphics\PrimitiveShape.h" />
     <ClInclude Include="Source\Engine\Graphics\Sprite.h" />
     <ClInclude Include="Source\Engine\Graphics\StaticFbxModel.h" />
     <ClInclude Include="Source\Engine\Input\Input.h" />
@@ -272,6 +274,7 @@
     <ClInclude Include="Source\Game\Objects\GameObjectFactory.h" />
     <ClInclude Include="Source\Game\Objects\Goal.h" />
     <ClInclude Include="Source\Game\Objects\Ground.h" />
+    <ClInclude Include="Source\Game\Objects\PrimitiveObject.h" />
     <ClInclude Include="Source\Game\Scenes\SceneGame.h" />
     <ClInclude Include="Source\Game\Serialization\SceneSerializer.h" />
     <ClInclude Include="Source\ThirdParty\nlohmann\json.hpp" />

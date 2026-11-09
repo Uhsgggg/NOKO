@@ -6,6 +6,8 @@
 #include "Source/Engine/Camera/CameraPlay.h"
 
 #include "Source/Game/Objects/GameObjectFactory.h"
+#include "Source/Game/Objects/PrimitiveObject.h"
+
 #include "Source/Game/Components/AutoRotateComponent.h"
 
 #include <fstream>
@@ -84,6 +86,39 @@ bool SceneSerializer::Save(
 			}
 
 			objectData["type"] = type;
+
+			//========================================
+			// PrimitiveObjectの形状を保存
+			//========================================
+			const PrimitiveObject* pPrimitive =
+				dynamic_cast<const PrimitiveObject*>(pObject.get());
+
+			if (pPrimitive)
+			{
+				string shapeName;
+
+				switch (pPrimitive->GetShape())
+				{
+				case PrimitiveShape::Box:
+					shapeName = "Box";
+					break;
+
+				case PrimitiveShape::Cylinder:
+					shapeName = "Cylinder";
+					break;
+
+				case PrimitiveShape::Sphere:
+					shapeName = "Sphere";
+					break;
+
+				default:
+					throw runtime_error(
+						"Unknown PrimitiveShape."
+					);
+				}
+
+				objectData["shape"] = shapeName;
+			}
 
 			//========================================
 			// オブジェクト名
@@ -298,6 +333,43 @@ bool SceneSerializer::Load(
 				throw runtime_error(
 					"Unknown GameObject type:" + type
 				);
+			}
+
+			//========================================
+			// PrimitiveObjectの形状を復元
+			//========================================
+			PrimitiveObject* pPrimitive =
+				dynamic_cast<PrimitiveObject*>(pObject.get());
+
+			if (pPrimitive)
+			{
+				// shapeがない場合はBoxを初期値にする
+				string shapeName = "Box";
+
+				if (objectData.contains("shape"))
+				{
+					shapeName =
+						objectData.at("shape").get<string>();
+				}
+
+				if (shapeName == "Box")
+				{
+					pPrimitive->SetShape(PrimitiveShape::Box);
+				}
+				else if (shapeName == "Cylinder")
+				{
+					pPrimitive->SetShape(PrimitiveShape::Cylinder);
+				}
+				else if (shapeName == "Sphere")
+				{
+					pPrimitive->SetShape(PrimitiveShape::Sphere);
+				}
+				else
+				{
+					throw runtime_error(
+						"Unknown PrimitiveShape: " + shapeName
+					);
+				}
 			}
 
 			//========================================

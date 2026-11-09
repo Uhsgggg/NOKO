@@ -5,9 +5,15 @@ enum class EditorAction
 {
 	None,
 
-	// オブジェクト編集
+	// 床・ゴールオブジェクト
 	CreateGround,
 	CreateGoal,
+
+	// 基本図形オブジェクト
+	CreateBox,
+	CreateCylinder,
+	CreateSphere,
+
 	Duplicate,
 	Delete,
 
