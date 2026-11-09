@@ -1,0 +1,127 @@
+{
+    "objects": [
+        {
+            "components": [],
+            "name": "Ground",
+            "transform": {
+                "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    15.0,
+                    0.009999999776482582,
+                    10.0
+                ]
+            },
+            "type": "Ground"
+        },
+        {
+            "components": [],
+            "name": "Wall+Z_xRot-90",
+            "transform": {
+                "position": [
+                    0.0,
+                    0.5,
+                    5.0
+                ],
+                "rotation": [
+                    -90.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    15.0,
+                    0.009999999776482582,
+                    1.0
+                ]
+            },
+            "type": "Ground"
+        },
+        {
+            "components": [],
+            "name": "Wall-Z_xRot+90",
+            "transform": {
+                "position": [
+                    0.0,
+                    0.5,
+                    -5.0
+                ],
+                "rotation": [
+                    90.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    15.0,
+                    0.009999999776482582,
+                    1.0
+                ]
+            },
+            "type": "Ground"
+        },
+        {
+            "components": [],
+            "name": "Wall+X_xRot+180_zRot+90",
+            "transform": {
+                "position": [
+                    7.5,
+                    0.5,
+                    0.0
+                ],
+                "rotation": [
+                    180.0,
+                    0.0,
+                    90.0
+                ],
+                "scale": [
+                    1.0,
+                    0.009999999776482582,
+                    10.0
+                ]
+            },
+            "type": "Ground"
+        },
+        {
+            "components": [],
+            "name": "Wall-X_xRot+180_zRot-90",
+            "transform": {
+                "position": [
+                    -7.5,
+                    0.5,
+                    0.0
+                ],
+                "rotation": [
+                    180.0,
+                    0.0,
+                    -90.0
+                ],
+                "scale": [
+                    1.0,
+                    0.009999999776482582,
+                    10.0
+                ]
+            },
+            "type": "Ground"
+        }
+    ],
+    "playCamera": {
+        "look": [
+            0.0,
+            0.0,
+            -0.30000001192092896
+        ],
+        "position": [
+            0.0,
+            10.0,
+            -2.0
+        ]
+    },
+    "version": 1
+}
