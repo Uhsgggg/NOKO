@@ -8,6 +8,8 @@ Shader* Geometory::m_pVS;
 Shader* Geometory::m_pPS;
 Shader* Geometory::m_pLineShader[2];
 DirectX::XMFLOAT4X4 Geometory::m_WVP[3];
+DirectX::XMFLOAT4 Geometory::m_color =
+	DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 void* Geometory::m_pLineVtx;
 int Geometory::m_lineCnt = 0;
 
@@ -48,6 +50,10 @@ void Geometory::SetProjection(DirectX::XMFLOAT4X4 proj)
 {
 	m_WVP[2] = proj;
 }
+void Geometory::SetColor(const DirectX::XMFLOAT4& color)
+{
+	m_color = color;
+}
 
 void Geometory::AddLine(DirectX::XMFLOAT3 start, DirectX::XMFLOAT3 end, DirectX::XMFLOAT4 color)
 {
@@ -71,27 +77,30 @@ void Geometory::DrawLines()
 
 void Geometory::DrawBox()
 {
-	if (m_pBox == nullptr)
+	if (!m_pBox || !m_pVS || !m_pPS)
 		return;
 	m_pVS->WriteBuffer(0, m_WVP);
+	m_pPS->WriteBuffer(0, &m_color);
 	m_pVS->Bind();
 	m_pPS->Bind();
 	m_pBox->Draw();
 }
 void Geometory::DrawCylinder()
 {
-	if (m_pCylinder == nullptr)
+	if (!m_pCylinder || !m_pVS || !m_pPS)
 		return;
 	m_pVS->WriteBuffer(0, m_WVP);
+	m_pPS->WriteBuffer(0, &m_color);
 	m_pVS->Bind();
 	m_pPS->Bind();
 	m_pCylinder->Draw();
 }
 void Geometory::DrawSphere()
 {
-	if (m_pSphere == nullptr)
+	if (!m_pSphere || !m_pVS || !m_pPS)
 		return;
 	m_pVS->WriteBuffer(0, m_WVP);
+	m_pPS->WriteBuffer(0, &m_color);
 	m_pVS->Bind();
 	m_pPS->Bind();
 	m_pSphere->Draw();
@@ -129,36 +138,41 @@ VS_OUT main(VS_IN vin) {
 
 void Geometory::MakePS()
 {
-#ifdef _DEBUG
 	const char* PSCode = R"EOT(
+
 struct PS_IN {
 	float4 pos : SV_POSITION;
 	float2 uv : TEXCOORD0;
 };
-float4 main(PS_IN pin) : SV_TARGET0 {
-	float4 color = float4(1,1,1,1);
-	float2 halfGrid = floor(abs(pin.uv) * 2.0f);
-	float2 quatGrid = floor(abs(pin.uv) * 8.0f);
 
-	float half = fmod(halfGrid.x + halfGrid.y, 2.0f);
-	float quat = fmod(quatGrid.x + quatGrid.y, 2.0f);
+// C++‚©‚çFî•ñ‚ðŽó‚¯Žæ‚é
+cbuffer PrimitiveColor : register(b0)
+{
+	float4 objectColor;
+}
 
-	color.rgb = ((half * 0.1f) * quat + 0.45f) + (1 - quat) * 0.05f;
-	return color;
+float4 main(PS_IN pin) : SV_TARGET0
+{
+	float2 grid = floor(abs(pin.uv) * 8.0f);
+	float checker = fmod(grid.x + grid.y, 2.0f);
+	float brightness = 0.85f + checker * 0.15f;
+	return float4(objectColor.rgb * brightness, objectColor.a);
 })EOT";
-#else
-	const char* PSCode = R"EOT(
-struct PS_IN {
-	float4 pos : SV_POSITION;
-	float2 uv : TEXCOORD0;
-};
-float4 main(PS_IN pin) : SV_TARGET0 {
-	return float4(1.0f, 0.0f, 1.0f, 1.0f);
-})EOT";
-#endif
 
 	m_pPS = new PixelShader();
-	m_pPS->Compile(PSCode);
+	HRESULT hr = m_pPS->Compile(PSCode);
+
+	if (FAILED(hr))
+	{
+		SAFE_DELETE(m_pPS);
+
+		MessageBoxA(
+			nullptr,
+			"Failed to compile Primitive PixelShader.",
+			"Geometory Shader Error",
+			MB_OK | MB_ICONERROR
+		);
+	}
 }
 void Geometory::MakeLineShader()
 {

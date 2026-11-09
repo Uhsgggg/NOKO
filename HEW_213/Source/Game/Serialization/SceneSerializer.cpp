@@ -43,6 +43,34 @@ namespace
 			values[i] = data.at(i).get<float>();
 		}
 	}
+
+	void ReadFloat4(
+		const json& data,
+		float values[4],
+		const char* fieldName)
+	{
+		if (!data.is_array() || data.size() != 4)
+		{
+			throw runtime_error(
+				string(fieldName) +
+				" must be an array of 4 numbers."
+			);
+		}
+
+		for (int i = 0; i < 4; i++)
+		{
+			values[i] = data.at(i).get<float>();
+
+			// 色の範囲を確認
+			if (!(values[i] >= 0.0f && values[i] <= 1.0f))
+			{
+				throw runtime_error(
+					string(fieldName) +
+					" values must be between 0 and 1."
+				);
+			}
+		}
+	}
 }
 
 bool SceneSerializer::Save(
@@ -124,6 +152,20 @@ bool SceneSerializer::Save(
 			// オブジェクト名
 			//========================================
 			objectData["name"] = pObject->GetName();
+
+			//========================================
+			// GameObjectの色をJSONへ保存
+			//========================================
+			// 現在の色を取得
+			const XMFLOAT4& color = pObject->GetColor();
+
+			// RGBAの4つの値を配列として保存
+			objectData["color"] = {
+				color.x,
+				color.y,
+				color.z,
+				color.w,
+			};
 
 			//========================================
 			// Transform
@@ -397,6 +439,34 @@ bool SceneSerializer::Load(
 					);
 				}
 			}
+
+			//========================================
+			// GameObjectの色を復元
+			//========================================
+			// 初期値は白
+			XMFLOAT4 color(1.0f, 1.0f, 1.0f, 1.0f);
+
+			// JSONに色情報がある場合だけ読み込む
+			if (objectData.contains("color"))
+			{
+				float values[4] = {};
+
+				ReadFloat4(
+					objectData.at("color"),
+					values,
+					"color"
+				);
+
+				color = XMFLOAT4(
+					values[0],
+					values[1],
+					values[2],
+					values[3]
+				);
+			}
+
+			// 読み取った色をGameObjectへ反映
+			pObject->SetColor(color);
 
 			//========================================
 			// Transformを復元

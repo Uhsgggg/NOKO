@@ -25,6 +25,7 @@ public:
 	static void SetWorld(DirectX::XMFLOAT4X4 world);
 	static void SetView(DirectX::XMFLOAT4X4 view);
 	static void SetProjection(DirectX::XMFLOAT4X4 proj);
+	static void SetColor(const DirectX::XMFLOAT4& color);
 
 	static void AddLine(DirectX::XMFLOAT3 start, DirectX::XMFLOAT3 end,
 		DirectX::XMFLOAT4 color = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
@@ -47,6 +48,7 @@ private:
 private:
 	static const int MAX_LINE_NUM = 1000;
 	static const int CIRCLE_DETAIL = 16;
+
 private:
 	static MeshBuffer* m_pBox;
 	static MeshBuffer* m_pCylinder;
@@ -56,6 +58,7 @@ private:
 	static Shader* m_pPS;
 	static Shader* m_pLineShader[2];
 	static DirectX::XMFLOAT4X4 m_WVP[3];
+	static DirectX::XMFLOAT4 m_color;
 	static void* m_pLineVtx;
 	static int m_lineCnt;
 };

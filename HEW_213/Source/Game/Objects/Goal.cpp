@@ -52,6 +52,8 @@ void Goal::Draw()
 
 	// •`‰æˆ—
 	Geometory::SetWorld(worldMatrix);
+	Geometory::SetColor(GetColor());
+
 	Geometory::DrawBox();
 }
 

@@ -36,6 +36,9 @@ void PrimitiveObject::Draw()
 	// 共通のWorld行列を設定
 	Geometory::SetWorld(worldMatrix);
 
+	// このオブジェクト自身の色を設定
+	Geometory::SetColor(GetColor());
+
 	//========================================
 	// 形状ごとに描画を切り替える
 	//========================================

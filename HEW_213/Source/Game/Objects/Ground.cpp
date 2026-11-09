@@ -29,6 +29,8 @@ void Ground::Draw()
 
 	// •`‰æˆ—
 	Geometory::SetWorld(worldMatrix);
+	Geometory::SetColor(GetColor());
+
 	Geometory::DrawBox();
 }
 

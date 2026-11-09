@@ -6,6 +6,8 @@
 #include <utility>
 #include <typeinfo>
 
+#include <DirectXMath.h>
+
 #include "Source/Engine/Math/Transform.h"
 #include "Source/Engine/Scene/Component.h"
 
@@ -16,6 +18,7 @@ public:
 	// 名前を受け取って初期化
 	explicit GameObject(const std::string& name)
 		: m_name(name)
+		, m_color(1.0f, 1.0f, 1.0f, 1.0f)
 	{
 
 	}
@@ -71,6 +74,18 @@ public:
 	void ResetTransform()
 	{
 		m_transform = m_initialTransform;
+	}
+
+	// 色を設定
+	void SetColor(const DirectX::XMFLOAT4& color)
+	{
+		m_color = color;
+	}
+
+	// 現在の色を取得
+	const DirectX::XMFLOAT4& GetColor() const
+	{
+		return m_color;
 	}
 
 	// コンポーネントを追加する
@@ -176,6 +191,9 @@ protected:
 		// Transformをコピー
 		destination.m_transform = m_transform;
 
+		// Colorをコピー
+		destination.m_color = m_color;
+
 		// 複製先のコンポーネントを一度空にする
 		destination.m_components.clear();
 
@@ -206,4 +224,7 @@ private:
 
 	// GameObjectがコンポーネントを所有
 	std::vector<std::unique_ptr<Component>> m_components;
+
+	// オブジェクトごとの色（RGBA）
+	DirectX::XMFLOAT4 m_color;
 };
