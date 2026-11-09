@@ -181,7 +181,10 @@
     <ClCompile Include="Source\Engine\Camera\Camera.cpp" />
     <ClCompile Include="Source\Engine\Camera\CameraDebug.cpp" />
     <ClCompile Include="Source\Engine\Camera\CameraPlay.cpp" />
-    <ClCompile Include="Source\Engine\Debug\DebugEditor.cpp" />
+    <ClCompile Include="Source\Engine\Debug\DebugEditor.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\DirectX\DirectX.cpp" />
     <ClCompile Include="Source\Engine\Graphics\DirectX\MeshBuffer.cpp" />
     <ClCompile Include="Source\Engine\Graphics\DirectX\Shader.cpp" />
