@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Source/Engine/Scene/GameObject.h"
+#include "Engine/Scene/GameObject.h"
 
 class Goal : public GameObject
 {

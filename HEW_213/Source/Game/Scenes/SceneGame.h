@@ -1,11 +1,11 @@
 #ifndef __SCENE_GAME_H__
 #define __SCENE_GAME_H__
 
-#include "Source/Engine/Scene/Scene.h"
-#include "Source/Engine/Scene/GameObject.h"
-#include "Source/Engine/Camera/Camera.h"
-#include "Source/Engine/Graphics/StaticFbxModel.h"
-#include "Source/Game/Enemies/Enemy.h"
+#include "Engine/Scene/Scene.h"
+#include "Engine/Scene/GameObject.h"
+#include "Engine/Camera/Camera.h"
+#include "Engine/Graphics/StaticFbxModel.h"
+#include "Game/Enemies/Enemy.h"
 
 #include <vector>
 #include <memory>

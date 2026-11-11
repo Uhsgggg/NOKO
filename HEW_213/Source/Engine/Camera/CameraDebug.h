@@ -1,6 +1,6 @@
 #pragma once
 #include "Camera.h"
-#include "Source/Engine/Input/Input.h"
+#include "Engine/Input/Input.h"
 
 // デバッグ用カメラ
 class CameraDebug : public Camera

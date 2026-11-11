@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Source/Engine/Scene/Component.h"
+#include "Engine/Scene/Component.h"
 
 // オブジェクトを自動回転させるコンポーネント
 class AutoRotateComponent : public Component

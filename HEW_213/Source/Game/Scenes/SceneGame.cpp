@@ -9,27 +9,29 @@
 //========================================//
 #include "SceneGame.h"
 
-#include "Source/App/Defines.h"
-#include "Source/ThirdParty/nlohmann/json.hpp"
-#include "Source/Engine/Input/Input.h"
+#include "App/Defines.h"
+#include "ThirdParty/nlohmann/json.hpp"
+#include "Engine/Input/Input.h"
 
-#include "Source/Engine/Graphics/DirectX/ShaderList.h"
-#include "Source/Engine/Graphics/Geometory.h"
-#include "Source/Engine/Camera/CameraDebug.h"
-#include "Source/Engine/Camera/CameraPlay.h"
+#include "Engine/Graphics/DirectX/ShaderList.h"
+#include "Engine/Graphics/Geometory.h"
 
-#include "Source/Game/Objects/Ground.h"
-#include "Source/Game/Objects/Goal.h"
-#include "Source/Game/Enemies/KingSlime.h"
-#include "Source/Game/Serialization/SceneSerializer.h"
+#include "Engine/Camera/CameraDebug.h"
+#include "Engine/Camera/CameraPlay.h"
+
+#include "Game/Serialization/SceneSerializer.h"
+
+#include "Game/Objects/Ground.h"
+#include "Game/Objects/Goal.h"
+#include "Game/Objects/FbxObject.h"
 
 #include <string>
 #include <Windows.h>
 
 #ifdef _DEBUG
-#include "Source/Engine/Debug/DebugEditor.h"
-#include "Source/Engine/Scene/SceneRayPicker.h"
-#include "Source/Game/Editor/SceneEditActions.h"
+#include "Engine/Debug/DebugEditor.h"
+#include "Engine/Scene/SceneRayPicker.h"
+#include "Game/Editor/SceneEditActions.h"
 #endif
 
 using namespace DirectX;
@@ -96,22 +98,6 @@ SceneGame::SceneGame()
 
 	// Play用カメラはDebug・Release共通
 	m_pPlayCamera = new CameraPlay;
-
-
-	//========================================
-	// KingSlime
-	//========================================
-	if (m_kingSlimeModel.Load("Assets/Model/KingSlime.fbx"))
-	{
-		unique_ptr<KingSlime> pSlime(
-			new KingSlime(m_kingSlimeModel)
-		);
-
-		pSlime->SetPosition(0.0f, 1.0f, 5.0f);
-		pSlime->SetScale(0.2f);
-
-		m_enemies.push_back(std::move(pSlime));
-	}
 
 
 	//========================================
@@ -282,6 +268,9 @@ void SceneGame::Draw()
 
 	Geometory::SetView(view);
 	Geometory::SetProjection(projection);
+
+	// FBXオブジェクトにもカメラ行列を設定
+	FbxObject::SetCameraMatrices(view, projection);
 
 	//========================================
 	// すべてのGameOjbectを描画

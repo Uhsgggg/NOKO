@@ -1,7 +1,7 @@
 #include "StaticFbxModel.h"
 
-#include "Source/Engine/Graphics/DirectX/ShaderList.h"
-#include "Source/Engine/Graphics/DirectX/Texture.h"
+#include "Engine/Graphics/DirectX/ShaderList.h"
+#include "Engine/Graphics/DirectX/Texture.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -350,9 +350,10 @@ bool StaticFbxModel::Load(const char* pFilePath)
 // 描画関数
 //========================================
 void StaticFbxModel::Draw(
-	const DirectX::XMFLOAT4X4& world,
-	const DirectX::XMFLOAT4X4& view,
-	const DirectX::XMFLOAT4X4& projection)
+	const XMFLOAT4X4& world,
+	const XMFLOAT4X4& view,
+	const XMFLOAT4X4& projection,
+	const XMFLOAT4& tint)
 {
 	if (m_meshes.empty()) return;
 
@@ -415,7 +416,7 @@ void StaticFbxModel::Draw(
 				m_materialDiffuseColors[materialIndex];
 		}
 
-		// Mayaの環境光成分
+		// Mayaの環境光
 		if (materialIndex < m_materialAmbientColors.size())
 		{
 			material.ambient =
@@ -436,7 +437,20 @@ void StaticFbxModel::Draw(
 				m_materialTextures[materialIndex].get();
 		}
 
-		// シェーダーへマテリアルを渡す
+		//========================================
+		// オブジェクトごとの色を反映
+		//========================================
+		// 拡散色
+		material.diffuse.x *= tint.x;
+		material.diffuse.y *= tint.y;
+		material.diffuse.z *= tint.z;
+
+		// 環境光
+		material.ambient.x *= tint.x;
+		material.ambient.y *= tint.y;
+		material.ambient.z *= tint.z;
+
+		// Mayaのマテリアル・テクスチャを使って描画
 		ShaderList::SetMaterial(material);
 
 		// メッシュを描画

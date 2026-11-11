@@ -3,10 +3,10 @@
 #include <utility>
 
 #include "Goal.h"
-#include "Source/App/Defines.h"
-#include "Source/Engine/Graphics/Geometory.h"
+#include "App/Defines.h"
+#include "Engine/Graphics/Geometory.h"
 
-#include "Source/Game/Components/AutoRotateComponent.h"
+#include "Game/Components/AutoRotateComponent.h"
 
 using namespace DirectX;
 using namespace std;

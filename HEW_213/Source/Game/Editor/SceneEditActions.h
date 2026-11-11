@@ -5,7 +5,7 @@
 #include <memory>
 #include <string>
 
-#include "Source/Game/Editor/EditorCommand.h"
+#include "Game/Editor/EditorCommand.h"
 
 class GameObject;
 class CameraPlay;

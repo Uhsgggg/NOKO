@@ -1,5 +1,5 @@
 #pragma once
-#include "Source/App/Defines.h"
+#include "App/Defines.h"
 #include <DirectXMath.h>
 
 class Camera

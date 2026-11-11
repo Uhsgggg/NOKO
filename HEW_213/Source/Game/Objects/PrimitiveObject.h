@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Source/Engine/Scene/GameObject.h"
-#include "Source/Engine/Graphics/PrimitiveShape.h"
+#include "Engine/Scene/GameObject.h"
+#include "Engine/Graphics/PrimitiveShape.h"
 
 // äÓñ{ê}å`Çï\é¶Ç∑ÇÈGameObject
 class PrimitiveObject : public GameObject

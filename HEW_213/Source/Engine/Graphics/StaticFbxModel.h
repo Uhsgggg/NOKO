@@ -4,8 +4,8 @@
 #include <memory>
 #include <vector>
 
-#include "Source/Engine/Graphics/DirectX/MeshBuffer.h"
-#include "Source/Engine/Graphics/DirectX/Texture.h"
+#include "Engine/Graphics/DirectX/MeshBuffer.h"
+#include "Engine/Graphics/DirectX/Texture.h"
 
 class StaticFbxModel
 {
@@ -17,8 +17,9 @@ public:
 	(
 		const DirectX::XMFLOAT4X4& world,
 		const DirectX::XMFLOAT4X4& view,
-		const DirectX::XMFLOAT4X4& projection
-	);
+		const DirectX::XMFLOAT4X4& projection,
+		const DirectX::XMFLOAT4& tint = 
+			DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 
 private:
 	// ÉÅÉbÉVÉÖ

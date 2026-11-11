@@ -229,35 +229,6 @@
         },
         {
             "color": [
-                1.0,
-                0.0,
-                0.0,
-                1.0
-            ],
-            "components": [],
-            "name": "Boss",
-            "shape": "Sphere",
-            "transform": {
-                "position": [
-                    5.0,
-                    1.5,
-                    -3.0
-                ],
-                "rotation": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "scale": [
-                    3.0,
-                    3.0,
-                    3.0
-                ]
-            },
-            "type": "Primitive"
-        },
-        {
-            "color": [
                 0.43772244453430176,
                 0.43772244453430176,
                 0.43772244453430176,
@@ -342,6 +313,35 @@
                 ]
             },
             "type": "Primitive"
+        },
+        {
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "components": [],
+            "modelPath": "Assets/Model/KingSlime.fbx",
+            "name": "KingSlime",
+            "transform": {
+                "position": [
+                    5.5,
+                    0.10000000149011612,
+                    -3.0
+                ],
+                "rotation": [
+                    0.0,
+                    120.0,
+                    0.0
+                ],
+                "scale": [
+                    0.30000001192092896,
+                    0.30000001192092896,
+                    0.30000001192092896
+                ]
+            },
+            "type": "Fbx"
         }
     ],
     "playCamera": {

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-#include "Source/Engine/Debug/DebugEditor.h"
+#include "Engine/Debug/DebugEditor.h"
 
 using namespace DirectX;
 using namespace std;

@@ -1,8 +1,8 @@
 #ifndef __SHADER_LIST_H__
 #define __SHADER_LIST_H__
 
-#include "Source/Engine/Graphics/DirectX/Shader.h"
-#include "Source/Engine/Graphics/Model.h"
+#include "Engine/Graphics/DirectX/Shader.h"
+#include "Engine/Graphics/Model.h"
 
 
 class ShaderList

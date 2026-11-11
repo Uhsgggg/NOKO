@@ -4,15 +4,15 @@
 #include <cmath>
 
 #ifdef _DEBUG
-#include "Source/Engine/Debug/DebugEditor.h"
+#include "Engine/Debug/DebugEditor.h"
 #endif
 
-#include "Source/Engine/Graphics/DirectX/DirectX.h"
-#include "Source/Engine/Graphics/DirectX/ShaderList.h"
-#include "Source/Engine/Graphics/Geometory.h"
-#include "Source/Engine/Graphics/Sprite.h"
-#include "Source/Engine/Input/Input.h"
-#include "Source/Game/Scenes/SceneGame.h"
+#include "Engine/Graphics/DirectX/DirectX.h"
+#include "Engine/Graphics/DirectX/ShaderList.h"
+#include "Engine/Graphics/Geometory.h"
+#include "Engine/Graphics/Sprite.h"
+#include "Engine/Input/Input.h"
+#include "Game/Scenes/SceneGame.h"
 
 //--- ÉOÉçÅ[ÉoÉãïœêî
 Scene* g_pScene = nullptr;

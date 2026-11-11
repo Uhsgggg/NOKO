@@ -2,10 +2,10 @@
 
 #ifdef _DEBUG
 
-#include "Source/Engine/Scene/GameObject.h"
-#include "Source/Engine/Camera/Camera.h"
+#include "Engine/Scene/GameObject.h"
+#include "Engine/Camera/Camera.h"
 
-#include "Source/Game/Objects/PrimitiveObject.h"
+#include "Game/Objects/PrimitiveObject.h"
 
 #include <DirectXMath.h>
 #include <DirectXCollision.h>

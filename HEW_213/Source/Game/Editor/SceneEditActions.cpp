@@ -1,12 +1,13 @@
 #include "SceneEditActions.h"
 
 #ifdef _DEBUG
-#include "Source/Engine/Scene/GameObject.h"
-#include "Source/Engine/Camera/CameraPlay.h"
+#include "Engine/Scene/GameObject.h"
+#include "Engine/Camera/CameraPlay.h"
 
-#include "Source/Game/Serialization/SceneSerializer.h"
-#include "Source/Game/Objects/GameObjectFactory.h"
-#include "Source/Game/Objects/PrimitiveObject.h"
+#include "Game/Serialization/SceneSerializer.h"
+#include "Game/Objects/GameObjectFactory.h"
+#include "Game/Objects/PrimitiveObject.h"
+#include "Game/Objects/FbxObject.h"
 
 #include <utility>
 #include <string>
@@ -142,6 +143,61 @@ SceneEditResult SceneEditActions::Execute(
 	}
 
 	//========================================
+	// FBXモデルを新規生成
+	//========================================
+	case EditorAction::CreateFbx:
+	{
+		// GameObjectFactoryから生成
+		pNewObject = 
+			GameObjectFactory::CreateForEditor("Fbx");
+
+		FbxObject* pFbx = 
+			dynamic_cast<FbxObject*>(pNewObject.get());
+
+		if (!pFbx)
+		{
+			result.error =
+				"Failed to create FbxObject.";
+
+			pNewObject.reset();
+			break;
+		}
+
+		// FBXモデルを設定
+		if (!pFbx->SetModelPath(command.modelPath))
+		{
+			result.error =
+				"Failet to load FBX:" + command.modelPath;
+
+			pNewObject.reset();
+			break;
+		}
+
+		//========================================
+		// ファイル名をオブジェクト名にする
+		//========================================
+		string name = command.modelPath;
+
+		// フォルダ部分を除去
+		size_t slash = name.find_last_of("/\\");
+		if (slash != string::npos)
+		{
+			name = name.substr(slash + 1);
+		}
+
+		// .fbxを除去
+		size_t dot = name.find_last_of('.');
+		if (dot != string::npos)
+		{
+			name = name.substr(0, dot);
+		}
+
+		pFbx->SetName(name);
+
+		break;
+	}
+
+	//========================================
 	// 複製
 	//========================================
 	case EditorAction::Duplicate:
@@ -243,8 +299,14 @@ SceneEditResult SceneEditActions::Execute(
 			playCamera,
 			error))
 		{
+			// 読み込み失敗時
+			result.error = "Load failed: " + error;
+		}
+		else
+		{
+			// 読み込み成功時
 			result.selectionChanged = true;
-			
+
 			result.selectedIndex =
 				objects.empty() ? -1 : 0;
 		}

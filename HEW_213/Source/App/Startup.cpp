@@ -7,7 +7,7 @@
 #include <crtdbg.h>
 
 #ifdef _DEBUG
-#include "Source/Engine/Debug/DebugEditor.h"
+#include "Engine/Debug/DebugEditor.h"
 #endif
 
 // timeGetTimeŽü‚è‚ÌŽg—p

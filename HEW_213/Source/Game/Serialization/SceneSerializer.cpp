@@ -1,14 +1,15 @@
 #include "SceneSerializer.h"
 
-#include "Source/ThirdParty/nlohmann/json.hpp"
+#include "ThirdParty/nlohmann/json.hpp"
 
-#include "Source/Engine/Scene/GameObject.h"
-#include "Source/Engine/Camera/CameraPlay.h"
+#include "Engine/Scene/GameObject.h"
+#include "Engine/Camera/CameraPlay.h"
 
-#include "Source/Game/Objects/GameObjectFactory.h"
-#include "Source/Game/Objects/PrimitiveObject.h"
+#include "Game/Objects/GameObjectFactory.h"
+#include "Game/Objects/PrimitiveObject.h"
+#include "Game/Objects/FbxObject.h"
 
-#include "Source/Game/Components/AutoRotateComponent.h"
+#include "Game/Components/AutoRotateComponent.h"
 
 #include <fstream>
 #include <stdexcept>
@@ -73,11 +74,13 @@ namespace
 	}
 }
 
+//========================================
+// JSON保存処理
+//========================================
 bool SceneSerializer::Save(
-	const string& filePath,
-	const vector<unique_ptr<GameObject>>& objects,
-	const CameraPlay& playCamera,
-	string& error)
+	const string& filePath, 
+	const vector<unique_ptr<GameObject>>& objects, 
+	const CameraPlay& playCamera, string& error)
 {
 	error.clear();
 
@@ -149,6 +152,18 @@ bool SceneSerializer::Save(
 			}
 
 			//========================================
+			// FBXのモデルパスを保存
+			//========================================
+			const FbxObject* pFbx =
+				dynamic_cast<const FbxObject*>(pObject.get());
+
+			if (pFbx)
+			{
+				objectData["modelPath"] = 
+					pFbx->GetModelPath();
+			}
+
+			//========================================
 			// オブジェクト名
 			//========================================
 			objectData["name"] = pObject->GetName();
@@ -173,14 +188,14 @@ bool SceneSerializer::Save(
 			const Transform& t = pObject->GetTransform();
 
 			objectData["transform"] = {
-				{
-					"position",
+					{
+						"position",
 					{
 						t.position[0],
 						t.position[1],
 						t.position[2]
 					}
-				},
+					},
 				{
 					"rotation",
 					{
@@ -247,14 +262,14 @@ bool SceneSerializer::Save(
 		const auto& cameraLook = playCamera.GetLook();
 
 		root["playCamera"] = {
-			{
-				"position",
+				{
+					"position",
 				{
 					cameraPos.x,
 					cameraPos.y,
 					cameraPos.z
 				}
-			},
+				},
 			{
 				"look",
 				{
@@ -307,6 +322,12 @@ bool SceneSerializer::Save(
 	}
 }
 
+
+
+
+//========================================
+// JSON読み込み処理
+//========================================
 bool SceneSerializer::Load(
 	const string& filePath,
 	vector<unique_ptr<GameObject>>& objects,
@@ -375,6 +396,25 @@ bool SceneSerializer::Load(
 				throw runtime_error(
 					"Unknown GameObject type:" + type
 				);
+			}
+
+			//========================================
+			// FBXのモデルパスを復元
+			//========================================
+			FbxObject* pFbx =
+				dynamic_cast<FbxObject*>(pObject.get());
+
+			if (pFbx)
+			{
+				string modelPath =
+					objectData.at("modelPath").get<string>();
+
+				if (!pFbx->SetModelPath(modelPath))
+				{
+					throw runtime_error(
+						"Failed to load FBX: " + modelPath
+					);
+				}
 			}
 
 			//========================================

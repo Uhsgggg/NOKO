@@ -1,9 +1,10 @@
 #include "GameObjectFactory.h"
 
-#include "Source/Engine/Scene/GameObject.h"
-#include "Source/Game/Objects/Ground.h"
-#include "Source/Game/Objects/Goal.h"
-#include "Source/Game/Objects/PrimitiveObject.h"
+#include "Engine/Scene/GameObject.h"
+#include "Game/Objects/Ground.h"
+#include "Game/Objects/Goal.h"
+#include "Game/Objects/PrimitiveObject.h"
+#include "Game/Objects/FbxObject.h"
 
 #include <memory>
 
@@ -25,10 +26,16 @@ unique_ptr<GameObject> GameObjectFactory::Create(
 		return unique_ptr<GameObject>(new Goal());
 	}
 
-	// 基本図形オブジェクト
+	// 基本図形を生成
 	if (type == "Primitive")
 	{
 		return unique_ptr<GameObject>(new PrimitiveObject());
+	}
+
+	// FBXモデルを生成
+	if (type == "Fbx")
+	{
+		return unique_ptr<GameObject>(new FbxObject());
 	}
 
 	// 未対応の種類
@@ -54,6 +61,12 @@ string GameObjectFactory::GetTypeName(
 	if (dynamic_cast<const PrimitiveObject*>(&object))
 	{
 		return "Primitive";
+	}
+
+	// Fbxを取得
+	if (dynamic_cast<const FbxObject*>(&object))
+	{
+		return "Fbx";
 	}
 
 	// 未対応の種類

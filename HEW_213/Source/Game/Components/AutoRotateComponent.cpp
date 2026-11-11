@@ -1,5 +1,5 @@
 #include "AutoRotateComponent.h"
-#include "Source/Engine/Scene/GameObject.h"
+#include "Engine/Scene/GameObject.h"
 
 #ifdef _DEBUG
 #include "imgui.h"

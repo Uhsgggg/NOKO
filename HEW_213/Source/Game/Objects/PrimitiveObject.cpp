@@ -1,6 +1,6 @@
 #include "PrimitiveObject.h"
 
-#include "Source/Engine/Graphics/Geometory.h"
+#include "Engine/Graphics/Geometory.h"
 
 #include <DirectXMath.h>
 #include <memory>

@@ -8,8 +8,8 @@
 
 #include <DirectXMath.h>
 
-#include "Source/Engine/Math/Transform.h"
-#include "Source/Engine/Scene/Component.h"
+#include "Engine/Math/Transform.h"
+#include "Engine/Scene/Component.h"
 
 // すべての基本的なゲームオブジェクトの共通クラス
 class GameObject

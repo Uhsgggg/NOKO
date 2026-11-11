@@ -1,7 +1,7 @@
 #include <DirectXMath.h>
 
 #include "Ground.h"
-#include "Source/Engine/Graphics/Geometory.h"
+#include "Engine/Graphics/Geometory.h"
 
 using namespace DirectX;
 using namespace std;

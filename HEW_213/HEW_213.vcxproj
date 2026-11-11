@@ -202,7 +202,7 @@
     <ClCompile Include="Source\Engine\Scene\SceneRayPicker.cpp" />
     <ClCompile Include="Source\Game\Components\AutoRotateComponent.cpp" />
     <ClCompile Include="Source\Game\Editor\SceneEditActions.cpp" />
-    <ClCompile Include="Source\Game\Enemies\KingSlime.cpp" />
+    <ClCompile Include="Source\Game\Objects\FbxObject.cpp" />
     <ClCompile Include="Source\Game\Objects\GameObjectFactory.cpp" />
     <ClCompile Include="Source\Game\Objects\Goal.cpp" />
     <ClCompile Include="Source\Game\Objects\Ground.cpp" />
@@ -270,7 +270,7 @@
     <ClInclude Include="Source\Game\Editor\EditorCommand.h" />
     <ClInclude Include="Source\Game\Editor\SceneEditActions.h" />
     <ClInclude Include="Source\Game\Enemies\Enemy.h" />
-    <ClInclude Include="Source\Game\Enemies\KingSlime.h" />
+    <ClInclude Include="Source\Game\Objects\FbxObject.h" />
     <ClInclude Include="Source\Game\Objects\GameObjectFactory.h" />
     <ClInclude Include="Source\Game\Objects\Goal.h" />
     <ClInclude Include="Source\Game\Objects\Ground.h" />

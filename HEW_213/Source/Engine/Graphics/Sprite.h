@@ -3,9 +3,9 @@
 
 #include <DirectXMath.h>
 #include <memory>
-#include "Source/Engine/Graphics/DirectX/MeshBuffer.h"
-#include "Source/Engine/Graphics/DirectX/Shader.h"
-#include "Source/Engine/Graphics/DirectX/Texture.h"
+#include "Engine/Graphics/DirectX/MeshBuffer.h"
+#include "Engine/Graphics/DirectX/Shader.h"
+#include "Engine/Graphics/DirectX/Texture.h"
 
 class Sprite
 {

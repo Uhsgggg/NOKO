@@ -7,8 +7,8 @@
 
 #include <DirectXMath.h>
 #include <vector>
-#include "Source/Engine/Graphics/DirectX/Shader.h"
-#include "Source/Engine/Graphics/DirectX/MeshBuffer.h"
+#include "Engine/Graphics/DirectX/Shader.h"
+#include "Engine/Graphics/DirectX/MeshBuffer.h"
 #include <functional>
 
 class Model
