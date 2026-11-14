@@ -240,6 +240,12 @@
     <ClCompile Include="Source\Game\Objects\FbxObject.cpp">
       <Filter>ソース ファイル\Game\Objects</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Components\MoveComponent.cpp">
+      <Filter>ソース ファイル\Game\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Components\ComponentRegistry.cpp">
+      <Filter>ソース ファイル\Game\Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\App\Defines.h">
@@ -370,6 +376,12 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Objects\FbxObject.h">
       <Filter>ヘッダー ファイル\Game\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Components\MoveComponent.h">
+      <Filter>ヘッダー ファイル\Game\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Components\ComponentRegistry.h">
+      <Filter>ヘッダー ファイル\Game\Components</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

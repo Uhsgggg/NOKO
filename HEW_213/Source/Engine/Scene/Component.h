@@ -25,6 +25,10 @@ public:
 	}
 
 	// コンポーネントの種類名
+	// 　JSON保存・内部識別用
+	virtual const char* GetTypeId() const = 0;
+
+	// 　Inspector表示用
 	virtual const char* GetTypeName() const
 	{
 		return "Component";

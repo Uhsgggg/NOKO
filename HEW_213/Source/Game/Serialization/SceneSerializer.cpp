@@ -9,7 +9,7 @@
 #include "Game/Objects/PrimitiveObject.h"
 #include "Game/Objects/FbxObject.h"
 
-#include "Game/Components/AutoRotateComponent.h"
+#include "Game/Components/ComponentRegistry.h"
 
 #include <fstream>
 #include <stdexcept>
@@ -32,7 +32,6 @@ namespace
 		if (!data.is_array() || data.size() != 3)
 		{
 			// JSONの内容が不正だった場合に例外を発生させる
-			// ※throwを使う場合、必ずtry / catchで受け取る必要がある
 			throw runtime_error(
 				string(fieldName) +
 				" must be an array of 3 numbers."
@@ -223,32 +222,30 @@ bool SceneSerializer::Save(
 			{
 				if (!pComponent) continue;
 
-				const AutoRotateComponent* pRotate =
-					dynamic_cast<const AutoRotateComponent*>(
-						pComponent.get()
+				// コンポーネントのIDから登録情報を探す
+				const ComponentRegistry::Entry* pEntry =
+					ComponentRegistry::Find(
+						pComponent->GetTypeId()
 						);
 
-				if (pRotate == nullptr)
+				if (!pEntry)
 				{
 					throw runtime_error(
-						"Unsupported Component type."
+						"Unregistered Component: " +
+						string(pComponent->GetTypeId())
 					);
 				}
 
-				const float* speed = pRotate->GetRotationSpeed();
-
 				json componentData;
 
-				componentData["type"] = "AutoRotate";
+				// 共通情報を保存
+				componentData["type"] = pEntry->typeId;
+				componentData["enabled"] = pComponent->IsEnabled();
 
-				componentData["enabled"] = pRotate->IsEnabled();
+				// 種類ごとのパラメータを保存
+				pEntry->save(*pComponent, componentData);
 
-				componentData["speed"] = {
-					speed[0],
-					speed[1],
-					speed[2]
-				};
-
+				// 配列に追加
 				objectData["components"].push_back(componentData);
 			}
 
@@ -536,7 +533,9 @@ bool SceneSerializer::Load(
 			//========================================
 			// Componentsを復元
 			//========================================
-			// Goalの初期コンポーネントも消す
+			// ・初期コンポーネントがついていた場合消しておく
+			// 　　読み込んだ際に、初期コンポーネントと後付けコンポーネントが
+			// 　　同じだった場合エラーが出るため
 			pObject->ClearComponents();
 
 			const json& savedComponents = objectData.at("components");
@@ -550,45 +549,49 @@ bool SceneSerializer::Load(
 
 			for (const auto& componentData : savedComponents)
 			{
+				// 保存されている種類を取得
 				string componentType =
 					componentData.at("type").get<string>();
 
-				if (componentType == "AutoRotate")
-				{
-					float speed[3];
+				// 登録済みのComponentか確認
+				const ComponentRegistry::Entry* pEntry =
+					ComponentRegistry::Find(componentType);
 
-					ReadFloat3(
-						componentData.at("speed"),
-						speed,
-						"speed"
-					);
-
-					unique_ptr<Component> pComponent(
-						new AutoRotateComponent(
-							pObject.get(),
-							speed[0],
-							speed[1],
-							speed[2]
-						)
-					);
-
-					bool enabled =
-						componentData.at("enabled").get<bool>();
-
-					pComponent->SetEnabled(enabled);
-
-					if (!pObject->AddComponent(move(pComponent)))
-					{
-						throw runtime_error(
-							"Duplicate Component."
-						);
-					}
-				}
-				else
+				if (!pEntry)
 				{
 					throw runtime_error(
 						"Unknown Component type: " +
 						componentData
+					);
+				}
+
+				// 登録されている生成関数を呼ぶ
+				unique_ptr<Component> pComponent =
+					pEntry->create(pObject.get());
+
+				if (!pComponent)
+				{
+					throw runtime_error(
+						"Component creation failed."
+					);
+				}
+
+				// 種類ごとの設定を復元
+				pEntry->load(
+					*pComponent,
+					componentData
+				);
+
+				// 有効・無効を復元
+				pComponent->SetEnabled(
+					componentData.at("enabled").get<bool>()
+				);
+
+				// GameObjectへ追加
+				if (!pObject->AddComponent(move(pComponent)))
+				{
+					throw runtime_error(
+						"Duplicate Component."
 					);
 				}
 			}

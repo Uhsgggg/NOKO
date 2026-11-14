@@ -31,7 +31,6 @@ private:
 	std::vector<std::unique_ptr<GameObject>> m_objects;
 	
 	// Hierarchyで選択中のオブジェクト番号
-	// -1 は、今回だけKingSlimeを表す
 	int m_selectedObjectIndex;
 
 	// 編集専用カメラ
@@ -45,9 +44,6 @@ private:
 
 	// Enemyをまとめて管理する
 	std::vector<std::unique_ptr<Enemy>> m_enemies;
-
-	// FBX : KingSlime
-	StaticFbxModel m_kingSlimeModel;
 
 #ifdef _DEBUG
 private:

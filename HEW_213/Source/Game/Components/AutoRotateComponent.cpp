@@ -7,12 +7,14 @@
 using namespace ImGui;
 #endif
 
+using namespace std;
+
 AutoRotateComponent::AutoRotateComponent(
-	GameObject* pOwner, float speedX, float speedY, float speedZ)
+	GameObject* pOwner,
+	float speedX, float speedY, float speedZ)
 	: Component(pOwner)
 	, m_rotationSpeed{ speedX, speedY, speedZ }
 {
-
 }
 
 void AutoRotateComponent::Update(float deltaTime)
@@ -20,18 +22,14 @@ void AutoRotateComponent::Update(float deltaTime)
 	// 所属するGameObjectのTransformを取得
 	Transform& transform = m_pOwner->GetTransform();
 
-	// ｘ軸の回転
+	// ｘｙｚ軸の回転
 	transform.rotation[0] += m_rotationSpeed[0] * deltaTime;
-
-	// ｙ軸の回転
 	transform.rotation[1] += m_rotationSpeed[1] * deltaTime;
-
-	// ｚ軸の回転
 	transform.rotation[2] += m_rotationSpeed[2] * deltaTime;
 
 }
 
-std::unique_ptr<Component> AutoRotateComponent::Clone(
+unique_ptr<Component> AutoRotateComponent::Clone(
 	GameObject* pNewOwner) const
 {
 	// 同じ回転速度を持つコンポーネントを作成
@@ -44,9 +42,10 @@ std::unique_ptr<Component> AutoRotateComponent::Clone(
 		)
 	);
 
-	// 有効・無効の状態もコピー
+	// 有効・無効の状態をコピー
 	pCopy->SetEnabled(IsEnabled());
 
+	
 	return pCopy;
 }
 
