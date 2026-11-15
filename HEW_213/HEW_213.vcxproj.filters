@@ -246,6 +246,9 @@
     <ClCompile Include="Source\Game\Components\ComponentRegistry.cpp">
       <Filter>ソース ファイル\Game\Components</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Scene\GameObject.cpp">
+      <Filter>ソース ファイル\Engine\Scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\App\Defines.h">

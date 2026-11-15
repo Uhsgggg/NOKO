@@ -52,8 +52,7 @@ namespace
 // コンストラクタ
 //========================================
 SceneGame::SceneGame()
-	: m_selectedObjectIndex(0)
-	, m_pCamera(nullptr)
+	: m_pCamera(nullptr)
 	, m_pPlayCamera(nullptr)
 	, m_showDebugGrid(true)
 {
@@ -84,20 +83,17 @@ SceneGame::SceneGame()
 
 	m_objects.push_back(move(pGoal));
 
-	// 最初はGoalを選択
-	m_selectedObjectIndex = 1;
-
 
 	//========================================
 	// カメラ
 	//========================================
 	// 編集用カメラはDebugのみ
 #ifdef _DEBUG
-	m_pCamera = new CameraDebug;
+	m_pCamera.reset(new CameraDebug());
 #endif
 
 	// Play用カメラはDebug・Release共通
-	m_pPlayCamera = new CameraPlay;
+	m_pPlayCamera.reset(new CameraPlay());
 
 
 	//========================================
@@ -136,19 +132,7 @@ SceneGame::SceneGame()
 //========================================
 // デストラクタ
 //========================================
-SceneGame::~SceneGame()
-{
-	if (m_pCamera)
-	{
-		delete m_pCamera;
-		m_pCamera = nullptr;
-	}
-	if (m_pPlayCamera)
-	{
-		delete m_pPlayCamera;
-		m_pPlayCamera = nullptr;
-	}
-}
+SceneGame::~SceneGame() = default;
 
 
 
@@ -199,15 +183,6 @@ void SceneGame::Update()
 				pObject->Update(deltaTime);
 			}
 		}
-
-		// Enemyの更新
-		for (auto& pEnemy : m_enemies)
-		{
-			if (pEnemy)
-			{
-				pEnemy->Update(deltaTime);
-			}
-		}
 	}
 
 	//========================================
@@ -250,21 +225,23 @@ void SceneGame::Draw()
 	// 使用するカメラを決定
 	//========================================
 	// 基本的にはPlay用カメラを使用
-	Camera* pRenderCamera = m_pPlayCamera;
+	Camera* pRenderCamera = m_pPlayCamera.get();
 
 #ifdef _DEBUG
 	// Edit Modeの場合だけDebugカメラを使用
 	if (m_isEditMode)
 	{
-		pRenderCamera = m_pCamera;
+		pRenderCamera = m_pCamera.get();
 	}
 #endif
 
 	//========================================
 	// カメラ行列の設定
 	//========================================
-	const XMFLOAT4X4 view = pRenderCamera->GetViewMatrix();
-	const XMFLOAT4X4 projection = pRenderCamera->GetProjectionMatrix();
+	const XMFLOAT4X4 view =
+		pRenderCamera->GetViewMatrix();
+	const XMFLOAT4X4 projection =
+		pRenderCamera->GetProjectionMatrix();
 
 	Geometory::SetView(view);
 	Geometory::SetProjection(projection);
@@ -290,107 +267,106 @@ void SceneGame::Draw()
 	}
 #endif
 
-	//========================================
-	// 敵の描画
-	//========================================
-	for (auto& pEnemy : m_enemies)
-	{
-		pEnemy->Draw(view, projection);
-	}
+#ifdef _DEBUG
+	if (m_isEditMode) DrawEditor();
+#endif
+}
+
+
+
 
 #ifdef _DEBUG
+//========================================
+// Edit Modeのエディタ処理
+//========================================
+void SceneGame::DrawEditor()
+{
 	//========================================
-	// Edit Modeのエディタ処理
+	// 3D画面内でのオブジェクト選択
 	//========================================
-	if (m_isEditMode)
-	{
-		//========================================
-		// 3D画面内でのオブジェクト選択
-		//========================================
-		float mouseX = 0.0f;
-		float mouseY = 0.0f;
-		float viewportWidth = 0.0f;
-		float viewportHeight = 0.0f;
+	float mouseX = 0.0f;
+	float mouseY = 0.0f;
+	float viewportWidth = 0.0f;
+	float viewportHeight = 0.0f;
 
-		// 3D画面が左クリックされたか確認
-		if (DebugEditor::TryGetSceneClick(
+	// 3D画面が左クリックされたか確認
+	if (DebugEditor::TryGetSceneClick(
+		mouseX,
+		mouseY,
+		viewportWidth,
+		viewportHeight))
+	{
+		// Raycastでオブジェクトを探す
+		int selectedIndex = SceneRayPicker::Pick(
+			m_objects,
+			*m_pCamera,
 			mouseX,
 			mouseY,
 			viewportWidth,
-			viewportHeight))
-		{
-			// Raycastでオブジェクトを探す
-			int selectedIndex = SceneRayPicker::Pick(
-				m_objects,
-				*m_pCamera,
-				mouseX,
-				mouseY,
-				viewportWidth,
-				viewportHeight
-			);
+			viewportHeight
+		);
 
-			// オブジェクトに当たった場合だけ選択
-			if (selectedIndex >= 0)
-			{
-				DebugEditor::SetSelectedObjectIndex(
-					selectedIndex
-				);
-			}
-		}
-
-		//========================================
-		// UIから命令を受け取る
-		//========================================
-		EditorCommand command =
-			DebugEditor::DrawScene(
-				m_objects,
-				m_showDebugGrid
-			);
-
-		//========================================
-		// 命令を実行する
-		//========================================
-		SceneEditResult result =
-			SceneEditActions::Execute(
-				command,
-				m_objects,
-				*m_pPlayCamera,
-				kStageFilePath
-			);
-
-		//========================================
-		// 実行結果を反映する
-		//========================================
-		if (result.selectionChanged)
+		// オブジェクトに当たった場合だけ選択
+		if (selectedIndex >= 0)
 		{
 			DebugEditor::SetSelectedObjectIndex(
-				result.selectedIndex
+				selectedIndex
 			);
 		}
+	}
 
-		//========================================
-		// エラーがあれば表示
-		//========================================
-		if (!result.error.empty())
-		{
-			MessageBoxA(
-				nullptr,
-				result.error.c_str(),
-				"Scene Editor Error",
-				MB_OK | MB_ICONERROR
-			);
-		}
+	//========================================
+	// UIから命令を受け取る
+	//========================================
+	EditorCommand command =
+		DebugEditor::DrawScene(
+			m_objects,
+			m_showDebugGrid
+		);
 
-		//========================================
-		// Playカメラ設定
-		//========================================
-		DebugEditor::DrawPlayCamera(
+	//========================================
+	// 命令を実行する
+	//========================================
+	SceneEditResult result =
+		SceneEditActions::Execute(
+			command,
+			m_objects,
 			*m_pPlayCamera,
-			*m_pCamera
+			kStageFilePath
+		);
+
+	//========================================
+	// 実行結果を反映する
+	//========================================
+	if (result.selectionChanged)
+	{
+		DebugEditor::SetSelectedObjectIndex(
+			result.selectedIndex
 		);
 	}
-#endif
+
+	//========================================
+	// エラーがあれば表示
+	//========================================
+	if (!result.error.empty())
+	{
+		MessageBoxA(
+			nullptr,
+			result.error.c_str(),
+			"Scene Editor Error",
+			MB_OK | MB_ICONERROR
+		);
+	}
+
+	//========================================
+	// Playカメラ設定
+	//========================================
+	DebugEditor::DrawPlayCamera(
+		*m_pPlayCamera,
+		*m_pCamera
+	);
 }
+#endif
 
 
 

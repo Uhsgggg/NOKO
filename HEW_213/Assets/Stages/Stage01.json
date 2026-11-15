@@ -144,35 +144,6 @@
             "color": [
                 0.0,
                 1.0,
-                1.0,
-                1.0
-            ],
-            "components": [],
-            "name": "Player",
-            "shape": "Sphere",
-            "transform": {
-                "position": [
-                    -5.0,
-                    0.550000011920929,
-                    1.0
-                ],
-                "rotation": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "scale": [
-                    1.0,
-                    1.0,
-                    1.0
-                ]
-            },
-            "type": "Primitive"
-        },
-        {
-            "color": [
-                0.0,
-                1.0,
                 0.0,
                 1.0
             ],
@@ -339,6 +310,35 @@
                     0.30000001192092896,
                     0.30000001192092896,
                     0.30000001192092896
+                ]
+            },
+            "type": "Fbx"
+        },
+        {
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "components": [],
+            "modelPath": "Assets/Model/MainCharacter_01.fbx",
+            "name": "MainCharacter_01",
+            "transform": {
+                "position": [
+                    -5.0,
+                    0.550000011920929,
+                    1.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
                 ]
             },
             "type": "Fbx"

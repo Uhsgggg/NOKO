@@ -34,6 +34,9 @@ public:
 		return "Component";
 	}
 
+	// 所有権を持たない参照先を取得
+	GameObject* GetOwner() const { return m_pOwner; }
+
 	bool IsEnabled() const
 	{
 		return m_enabled;
@@ -52,15 +55,14 @@ public:
 	// 開発中だけ使うInspector描画
 	virtual void DrawDebugInspector()
 	{
-
 	}
 #endif
 
 protected:
-	// コンポーネントを所有しているオブジェクト
-	// m_pOwner : そのコンポーネントがどのGameObjectに
-	//			　取り付けられているかを示すポインタ。
-	//			　所有権を持たないポインタ。
+	// ・コンポーネントを所有しているオブジェクト
+	// 　　そのコンポーネントがどのGameObjectに
+	// 　　取り付けられているかを示すポインタ。
+	// 　　所有権を持たないポインタ。
 	GameObject* m_pOwner;
 
 private:

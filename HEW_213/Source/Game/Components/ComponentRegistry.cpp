@@ -1,16 +1,17 @@
-#include "ComponentRegistry.h"
+﻿#include "ComponentRegistry.h"
 
 #include "Game/Components/AutoRotateComponent.h"
 #include "Game/Components/MoveComponent.h"
 
 #include <stdexcept>
+#include <cmath>
 
 using namespace std;
 using json = nlohmann::json;
 
 namespace
 {
-	// JSON����3��float�l��ǂݍ���
+	// JSONから3つのfloat値を読み込み
 	void ReadVector3(
 		const json& value,
 		float result[3],
@@ -34,9 +35,9 @@ namespace
 const vector<ComponentRegistry::Entry>& 
 	ComponentRegistry::GetEntries()
 {
-	// �E�����_���ŋL�q
-	// �@�@�ʂ̖��O�t���֐����`���Ȃ��Ă�
-	// �@�@���̏�Ŋ֐��̏������L�q�ł���L�@
+	// ・ラムダ式で記述
+	// 　　別の名前付き関数を定義しなくても
+	// 　　その場で関数の処理を記述できる記法
 	static const vector<Entry> entries =
 	{
 		//========================================
@@ -46,7 +47,7 @@ const vector<ComponentRegistry::Entry>&
 			"AutoRotate",
 			"Auto Rotate",
 
-			// ����
+			// 生成
 			[](GameObject* owner)->unique_ptr<Component>
 			{
 				return unique_ptr<Component>(
@@ -59,11 +60,18 @@ const vector<ComponentRegistry::Entry>&
 				);
 			},
 
-		// �ۑ�
+		// 保存
 		[](const Component& base, json& data)
 		{
+			// 今回の場合、
+			// 〇dynamic_cast … 実際に指定した派生型へ
+			// 　　　　　　　　　変換できるか確認する。
+			// ✕static_cast  … 基底クラスからの変換では、
+			// 　　　　　　　　　実際の派生型を実行時に確認しない。
+			// これは登録ミスによって別のComponentが渡された場合、
+			// 安全に失敗するとは限らないため。
 			const AutoRotateComponent& c =
-				static_cast<const AutoRotateComponent&>(base);
+				dynamic_cast<const AutoRotateComponent&>(base);
 
 			const float* speed = c.GetRotationSpeed();
 
@@ -74,7 +82,7 @@ const vector<ComponentRegistry::Entry>&
 			};
 		},
 
-		// �ǂݍ���
+		// 読み込み
 		[](Component& base, const json& data)
 		{
 			float speed[3];
@@ -86,7 +94,7 @@ const vector<ComponentRegistry::Entry>&
 			);
 
 			AutoRotateComponent& c =
-				static_cast<AutoRotateComponent&>(base);
+				dynamic_cast<AutoRotateComponent&>(base);
 
 			c.SetRotationSpeed(
 				speed[0],
@@ -103,7 +111,7 @@ const vector<ComponentRegistry::Entry>&
 			"Move",
 			"Move",
 
-			// ����
+			// 生成
 			[](GameObject* owner)->unique_ptr<Component>
 			{
 				return unique_ptr<Component>(
@@ -116,11 +124,11 @@ const vector<ComponentRegistry::Entry>&
 				);
 			},
 
-			// �ۑ�
+			// 保存
 			[](const Component& base, json& data)
 			{
 				const MoveComponent& c =
-					static_cast<const MoveComponent&>(base);
+					dynamic_cast<const MoveComponent&>(base);
 
 				const float* velocity = c.GetVelocity();
 
@@ -131,7 +139,7 @@ const vector<ComponentRegistry::Entry>&
 				};
 			},
 
-			// �ǂݍ���
+			// 読み込み
 			[](Component& base, const json& data)
 			{
 				float velocity[3];
@@ -143,7 +151,7 @@ const vector<ComponentRegistry::Entry>&
 				);
 
 				MoveComponent& c =
-					static_cast<MoveComponent&>(base);
+					dynamic_cast<MoveComponent&>(base);
 
 				c.SetVelocity(
 					velocity[0],
@@ -154,7 +162,7 @@ const vector<ComponentRegistry::Entry>&
 		}
 
 		//========================================
-		// ����ǉ��\��
+		// 今後追加予定
 		//========================================
 	};
 
@@ -166,7 +174,7 @@ const ComponentRegistry::Entry*
 {
 	const vector<Entry>& entries = GetEntries();
 
-	// �o�^�ꗗ��擪���璲�ׂ�
+	// 登録一覧を先頭から調べる
 	for (const Entry& entry : entries)
 	{
 		if (typeId == entry.typeId)
@@ -175,7 +183,7 @@ const ComponentRegistry::Entry*
 		}
 	}
 
-	// ������Ȃ������ꍇ��nullptr�ŕԂ�
+	// 見つからなかった場合はnullptrで返す
 	return nullptr;
 }
 
