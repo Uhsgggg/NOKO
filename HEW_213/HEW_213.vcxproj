@@ -198,6 +198,7 @@
     <ClCompile Include="Source\Engine\Graphics\_geometory.cpp" />
     <ClCompile Include="Source\Engine\Graphics\_model.cpp" />
     <ClCompile Include="Source\Engine\Input\Input.cpp" />
+    <ClCompile Include="Source\Engine\Scene\GameObject.cpp" />
     <ClCompile Include="Source\Engine\Scene\Scene.cpp" />
     <ClCompile Include="Source\Engine\Scene\SceneRayPicker.cpp" />
     <ClCompile Include="Source\Game\Components\AutoRotateComponent.cpp">

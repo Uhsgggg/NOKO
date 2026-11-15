@@ -34,16 +34,13 @@ private:
 	int m_selectedObjectIndex;
 
 	// 編集専用カメラ
-	Camera* m_pCamera;
+	std::unique_ptr<Camera> m_pCamera;
 
 	// プレイ専用カメラ
-	CameraPlay* m_pPlayCamera;
+	std::unique_ptr<CameraPlay> m_pPlayCamera;
 
 	// グリッドを表示するかどうか
 	bool m_showDebugGrid;
-
-	// Enemyをまとめて管理する
-	std::vector<std::unique_ptr<Enemy>> m_enemies;
 
 #ifdef _DEBUG
 private:
@@ -56,6 +53,7 @@ private:
 
 	// Play Modeを開始する
 	void EnterPlayMode();
+	void DrawEditor();
 
 	// Play Modeを終了する
 	void ExitPlayMode();

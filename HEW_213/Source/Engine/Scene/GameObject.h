@@ -1,10 +1,19 @@
+//========================================//
+// 
+// GameObject.h
+// 
+// クラスの宣言
+// public関数の宣言
+// メンバ変数
+// テンプレート関数
+// 短いGetter / Setter
+// 
+//========================================//
 #pragma once
 
 #include <string>
 #include <vector>
 #include <memory>
-#include <utility>
-#include <typeinfo>
 
 #include <DirectXMath.h>
 
@@ -20,25 +29,29 @@ public:
 		: m_name(name)
 		, m_color(1.0f, 1.0f, 1.0f, 1.0f)
 	{
-
 	}
+
+	// ・所有者のアドレスを変えない。複製はClone()を使用する。
+	// 　　GameObjectはComponentを所有しており、
+	// 　　Componentは所有者のアドレスを覚えている。
+	// 　　そのため、GameObjectそのものを直接コピーしたり、
+	// 　　別のアドレスに移動したりすると、所有者のポインタに
+	// 　　問題が発生する可能性がある。
+	// 
+	// 　　ただし、objects.push_back(move(pObject));は使える。
+	// 　　これはGameObjectそのものを移動しているわけではなく、
+	// 　　GameObjectを所有しているunique_ptrを移動しているだけだから。
+	GameObject(const GameObject&) = delete;
+	GameObject& operator = (const GameObject&) = delete;
+	GameObject(GameObject&&) = delete;
+	GameObject& operator = (GameObject&&) = delete;
 
 	// 継承先を安全に破棄するためにvirtualを付ける
 	virtual ~GameObject() = default;
 
 	// 共通の更新処理
 	// 更新は派生クラスで実装しない
-	virtual void Update(float deltaTime) final
-	{
-		for (auto& pComponent : m_components)
-		{
-			// 有効なコンポーネントだけ更新
-			if (pComponent && pComponent->IsEnabled())
-			{
-				pComponent->Update(deltaTime);
-			}
-		}
-	}
+	virtual void Update(float deltaTime) final;
 
 	// 描画は派生クラスで実装する
 	virtual void Draw() = 0;
@@ -89,85 +102,53 @@ public:
 	}
 
 	// コンポーネントを追加する
-	bool AddComponent(std::unique_ptr<Component> pComponent)
-	{
-		// nullptrは追加できない
-		if (!pComponent) return false;
-
-		// 既存のコンポーネントと型を比較
-		for (const auto& pExisting : m_components)
-		{
-			if (!pExisting) continue;
-
-			// 同じ型なら追加しない
-			if (typeid(*pExisting) == typeid(*pComponent))
-			{
-				return false;
-			}
-		}
-
-		// 重複していなければ追加する
-		m_components.push_back(std::move(pComponent));
-
-		return true;
-	}
+	bool AddComponent(std::unique_ptr<Component> pComponent);
 
 	// 指定した種類のコンポーネントが存在するか確認
 	// ・template は型を後から指定できるようする仕組み
 	// 　pObject->HasComponent<AutoRotateComponent>();みたいに書くと
 	// 　T には AutoRotateComponentが入る。
 	template <typename T>
-	bool HasComponent() const
+	T* GetComponent()
 	{
 		// 全コンポーネントを調べる
 		for (const auto& pComponent : m_components)
 		{
-			if (!pComponent) continue;
-
 			// 指定した型のコンポーネントか確認
-			if (dynamic_cast<T*>(pComponent.get()) != nullptr)
-			{
-				return true;
-			}
+			if (auto* p = dynamic_cast<T*>(pComponent.get())) return p;
 		}
 
-		return false;
+		return nullptr;
 	}
+
+	// constオブジェクトから読み取り専用のComponentを取得する用
+	template <typename T>
+	const T* GetComponent() const
+	{
+		// 全コンポーネントを調べる
+		for (const auto& pComponent : m_components)
+		{
+			// 指定した型のコンポーネントか確認
+			if (auto* p = dynamic_cast<T*>(pComponent.get())) return p;
+		}
+
+		return nullptr;
+	}
+
+	template <typename T>
+	bool HasComponent() const
+	{
+		return GetComponent<T>() != nullptr;
+	}
+
+	// RegistryやEditor向け：保存用IDで存在確認する
+	bool HasComponentId(const std::string& typeId) const;
 
 	// コンポーネントを削除する
-	bool RemoveComponent(Component* pTarget)
-	{
-		if (pTarget == nullptr) return false;
-
-		// コンポーネントを先頭から調べる
-		// ・it はイテレータ：vectorの要素を順番に調べるため
-		// 　begin() : 最初の要素
-		// 　end() 　: 最後の要素の1つ後ろの位置
-		// 杉浦先生の言っていた内容は、
-		// 複数の要素を削除したい時に書く
-		for (auto it = m_components.begin();
-			it != m_components.end(); ++it)
-		{
-			// 削除対象を見つけたら
-			if (it->get() == pTarget)
-			{
-				// vectorから削除
-				m_components.erase(it);
-
-				// 削除したらループから抜けるため
-				// 一つ飛ばしにならず、エラーにならない
-				return true;
-			}
-		}
-
-		return false;
-	}
+	bool RemoveComponent(Component* pTarget);
 	
 	//全コンポーネントを取り除く
-	void ClearComponents()
-	{
-		m_components.clear();
-	}
+	void ClearComponents();
 
 	// 取り付けられたコンポーネント一覧を取得
 	const std::vector<std::unique_ptr<Component>>& GetComponents() const
@@ -183,38 +164,7 @@ public:
 
 protected:
 	// GameObjectの共通情報を複製先へコピー
-	void CopyCommonStateTo(GameObject& destination) const
-	{
-		// 名前をコピー
-		destination.m_name = m_name;
-
-		// Transformをコピー
-		destination.m_transform = m_transform;
-
-		// Colorをコピー
-		destination.m_color = m_color;
-
-		// 複製先のコンポーネントを一度空にする
-		destination.m_components.clear();
-
-		// 元のコンポ―ネントを順番に複製
-		for (const auto& pComponent : m_components)
-		{
-			if (!pComponent) continue;
-
-			// 新しい所有者を渡して複製
-			std::unique_ptr<Component> pCopy =
-				pComponent->Clone(&destination);
-
-			if (pCopy)
-			{
-				destination.AddComponent(std::move(pCopy));
-			}
-		}
-
-		// 複製時の状態を初期状態として保存
-		destination.SaveInitialTransform();
-	}
+	void CopyCommonStateTo(GameObject& destination) const;
 
 private:
 	std::string m_name;
