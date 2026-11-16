@@ -17,7 +17,7 @@ public:
 	{
 		// JSON•Û‘¶—p‚ÌID
 		const char* typeId;
-
+		
 		// Inspector‚Ì•\Ž¦–¼
 		const char* displayName;
 

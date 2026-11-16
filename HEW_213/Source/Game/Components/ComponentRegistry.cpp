@@ -44,8 +44,8 @@ const vector<ComponentRegistry::Entry>&
 		// AutoRotate
 		//========================================
 		{
-			"AutoRotate",
-			"Auto Rotate",
+			"AutoRotate",  // JSON保存用のID
+			"Auto Rotate", // Inspectorの表示名
 
 			// 生成
 			[](GameObject* owner)->unique_ptr<Component>
@@ -162,7 +162,7 @@ const vector<ComponentRegistry::Entry>&
 		}
 
 		//========================================
-		// 今後追加予定
+		// 追加はここから
 		//========================================
 	};
 

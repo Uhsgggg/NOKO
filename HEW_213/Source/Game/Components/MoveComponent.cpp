@@ -10,9 +10,7 @@ using namespace std;
 //========================================
 // コンストラクタ
 //========================================
-MoveComponent::MoveComponent(
-	GameObject* pOwner,
-	float x, float y, float z)
+MoveComponent::MoveComponent(GameObject* pOwner,float x, float y, float z)
 	: Component(pOwner)
 	, m_velocity{ x, y, z }
 {

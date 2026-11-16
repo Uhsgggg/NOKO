@@ -5,9 +5,7 @@
 class MoveComponent : public Component
 {
 public:
-	MoveComponent(
-		GameObject* pOwner,
-		float x, float y, float z);
+	MoveComponent(GameObject* pOwner,float x, float y, float z);
 	~MoveComponent() override = default;
 
 	// 毎フレームの移動処理
@@ -26,8 +24,7 @@ public:
 	}
 
 	// コンポーネント複製
-	std::unique_ptr<Component> Clone(
-		GameObject* pNewOwner) const override;
+	std::unique_ptr<Component> Clone(GameObject* pNewOwner) const override;
 
 	// 移動速度を設定
 	void SetVelocity(float x, float y, float z);
