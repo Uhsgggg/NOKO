@@ -23,6 +23,9 @@ public:
 
 #ifdef _DEBUG
 	void DrawDebugInspector() override;
+	// 当たり判定可視化用
+	// ※実装はリードがやる予定なので、無視してください。
+	void DrawDebug() const; 
 #endif
 
 	void Configure(const ColliderConfig& config);
