@@ -231,6 +231,7 @@ copy /Y "$(ProjectDir)External\Assimp\bin\assimp-vc143-mt.dll" "$(TargetDir)assi
     <ClCompile Include="Source\Game\Objects\PrimitiveObject.cpp" />
     <ClCompile Include="Source\Game\Scenes\SceneGame.cpp" />
     <ClCompile Include="Source\Game\Serialization\SceneSerializer.cpp" />
+    <ClCompile Include="Source\Game\Systems\StopAllSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ImGui\backends\imgui_impl_dx11.h">
@@ -292,14 +293,20 @@ copy /Y "$(ProjectDir)External\Assimp\bin\assimp-vc143-mt.dll" "$(TargetDir)assi
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Source\Game\Components\BallMotionComponent.h" />
+    <ClInclude Include="Source\Game\Components\ColliderComponent.h" />
     <ClInclude Include="Source\Game\Components\ComponentRegistry.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Source\Game\Components\HealthComponent.h" />
     <ClInclude Include="Source\Game\Components\MoveComponent.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Source\Game\Components\PlayerInputComponent.h" />
+    <ClInclude Include="Source\Game\Components\PlayerLaunchComponent.h" />
+    <ClInclude Include="Source\Game\Components\ReflectionCounterComponent.h" />
     <ClInclude Include="Source\Game\Editor\EditorCommand.h" />
     <ClInclude Include="Source\Game\Editor\SceneEditActions.h" />
     <ClInclude Include="Source\Game\Enemies\Enemy.h" />
@@ -310,6 +317,12 @@ copy /Y "$(ProjectDir)External\Assimp\bin\assimp-vc143-mt.dll" "$(TargetDir)assi
     <ClInclude Include="Source\Game\Objects\PrimitiveObject.h" />
     <ClInclude Include="Source\Game\Scenes\SceneGame.h" />
     <ClInclude Include="Source\Game\Serialization\SceneSerializer.h" />
+    <ClInclude Include="Source\Game\Systems\CollisionSystem.h" />
+    <ClInclude Include="Source\Game\Systems\DamageFomula.h" />
+    <ClInclude Include="Source\Game\Systems\GameTypes.h" />
+    <ClInclude Include="Source\Game\Systems\StopAllSystem.h" />
+    <ClInclude Include="Source\Game\Systems\TurnSystem.h" />
+    <ClInclude Include="Source\Game\UI\HudPresenter.h" />
     <ClInclude Include="Source\ThirdParty\nlohmann\json.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

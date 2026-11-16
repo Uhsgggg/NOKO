@@ -175,6 +175,15 @@ void SceneGame::Update()
 	//========================================
 	if (shouldUpdateGame)
 	{
+		// Systemを実行する
+		if (IsKeyTrigger('T'))
+		{
+			m_stopAll.Stop(m_objects);
+		}
+
+
+
+
 		// 全GameObjectのコンポーネントを更新
 		for (auto& pObject : m_objects)
 		{

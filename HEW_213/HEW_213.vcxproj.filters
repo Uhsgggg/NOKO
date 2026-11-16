@@ -127,6 +127,18 @@
     <Filter Include="ヘッダー ファイル\Game\Editor">
       <UniqueIdentifier>{45aec496-d137-41ac-8532-a5c76ee9f891}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\Game\Systems">
+      <UniqueIdentifier>{4a759c6f-6d6c-48b4-a98a-b47a70c773c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Game\UI">
+      <UniqueIdentifier>{0ae1398f-f0b1-4cac-a66f-17a0c0500921}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Game\Systems">
+      <UniqueIdentifier>{23979103-efda-4c2f-8c01-53f7b96a19f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Game\UI">
+      <UniqueIdentifier>{82e913e8-5882-4c07-b3e5-69edd7cea8f3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\App\Main.cpp">
@@ -248,6 +260,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Scene\GameObject.cpp">
       <Filter>ソース ファイル\Engine\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Systems\StopAllSystem.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -385,6 +400,42 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Components\ComponentRegistry.h">
       <Filter>ヘッダー ファイル\Game\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Components\BallMotionComponent.h">
+      <Filter>ヘッダー ファイル\Game\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Components\ColliderComponent.h">
+      <Filter>ヘッダー ファイル\Game\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Components\HealthComponent.h">
+      <Filter>ヘッダー ファイル\Game\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Components\PlayerInputComponent.h">
+      <Filter>ヘッダー ファイル\Game\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Components\PlayerLaunchComponent.h">
+      <Filter>ヘッダー ファイル\Game\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Components\ReflectionCounterComponent.h">
+      <Filter>ヘッダー ファイル\Game\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Systems\CollisionSystem.h">
+      <Filter>ヘッダー ファイル\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Systems\DamageFomula.h">
+      <Filter>ヘッダー ファイル\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Systems\GameTypes.h">
+      <Filter>ヘッダー ファイル\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Systems\TurnSystem.h">
+      <Filter>ヘッダー ファイル\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\HudPresenter.h">
+      <Filter>ヘッダー ファイル\Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Systems\StopAllSystem.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

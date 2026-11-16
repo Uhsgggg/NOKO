@@ -5,7 +5,8 @@
 #include "Engine/Scene/GameObject.h"
 #include "Engine/Camera/Camera.h"
 #include "Engine/Graphics/StaticFbxModel.h"
-#include "Game/Enemies/Enemy.h"
+
+#include "Game/Systems/StopAllSystem.h"
 
 #include <vector>
 #include <memory>
@@ -26,7 +27,7 @@ public:
 private:
 	void DrawDebugGrid();
 
-private:
+private: // main
 	// GameObjectをまとめて管理する
 	std::vector<std::unique_ptr<GameObject>> m_objects;
 	
@@ -42,8 +43,12 @@ private:
 	// グリッドを表示するかどうか
 	bool m_showDebugGrid;
 
+private: // Systems
+	// 全オブジェクト停止システム
+	StopAllSystem m_stopAll;
+
 #ifdef _DEBUG
-private:
+private: // Debug
 	// true  : Edit Mode
 	// false : Play Mode
 	bool m_isEditMode = true;
