@@ -89,6 +89,16 @@ public:
 		m_transform = m_initialTransform;
 	}
 
+	// 実行時の有効状態（JSONには保存しない）
+	void SetActive(bool active)
+	{
+		m_active = active;
+	}
+	bool IsActive() const
+	{
+		return m_active;
+	}
+
 	// 色を設定
 	void SetColor(const DirectX::XMFLOAT4& color)
 	{
@@ -168,6 +178,7 @@ protected:
 
 private:
 	std::string m_name;
+	bool m_active = true;
 
 	Transform m_transform;
 	Transform m_initialTransform;

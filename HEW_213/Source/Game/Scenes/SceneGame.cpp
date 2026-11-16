@@ -23,10 +23,15 @@
 
 #include "Game/Objects/Ground.h"
 #include "Game/Objects/Goal.h"
+#include "Game/Objects/PrimitiveObject.h"
 #include "Game/Objects/FbxObject.h"
 
-#include <string>
+#include "Game/UI/HudPresenter.h"
+
 #include <Windows.h>
+#include <algorithm>
+#include <cmath>
+#include <string>
 
 #ifdef _DEBUG
 #include "Engine/Debug/DebugEditor.h"
@@ -43,6 +48,12 @@ namespace
 	// ステージの保存先
 	const char* const kStageFilePath =
 		"Assets/Stages/Stage01.json";
+
+	// プロトタイプの仮仕様。企画確定後に変更するところ
+	constexpr int kShots = 10;
+	constexpr int kWaveInterval = 3;
+	constexpr float kBaseDamage = 3.0f;
+	constexpr float kMultiplier = 0.5f;
 }
 
 

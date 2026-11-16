@@ -232,6 +232,7 @@ copy /Y "$(ProjectDir)External\Assimp\bin\assimp-vc143-mt.dll" "$(TargetDir)assi
     <ClCompile Include="Source\Game\Scenes\SceneGame.cpp" />
     <ClCompile Include="Source\Game\Serialization\SceneSerializer.cpp" />
     <ClCompile Include="Source\Game\Systems\StopAllSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\HudPresenter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ImGui\backends\imgui_impl_dx11.h">

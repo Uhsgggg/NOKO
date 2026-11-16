@@ -19,6 +19,8 @@
 
 void GameObject::Update(float deltaTime)
 {
+	if (!m_active) return;
+
 	for (auto& pComponent : m_components)
 	{
 		// 有効なコンポーネントだけ更新
@@ -106,6 +108,7 @@ void GameObject::CopyCommonStateTo(GameObject& destination) const
 {
 	// 名前をコピー
 	destination.m_name = m_name;
+	destination.m_active = true;
 
 	// Transformをコピー
 	destination.m_transform = m_transform;

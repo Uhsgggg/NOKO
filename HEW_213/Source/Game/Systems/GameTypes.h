@@ -36,7 +36,7 @@ struct ColliderConfig
 };
 struct PointerFrame
 {
-	bool calid = false; // フォーカス喪失・平面交差失敗時 : false
+	bool valid = false; // フォーカス喪失・平面交差失敗時 : false
 	bool pressed = false, held = false, released = false;
 	bool hitPlayer = false; // pressed時のみ必要
 	BoardVec2 point;
