@@ -361,3 +361,23 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# HEW_213: source and prebuilt third-party libraries
+
+# DebugEditor
+!/HEW_213/Source/Engine/Debug/
+
+# DirectXTex
+!/HEW_213/DirectXTex/Win32/
+!/HEW_213/DirectXTex/x64/
+
+!/HEW_213/DirectXTex/Win32/Debug/
+!/HEW_213/DirectXTex/Win32/Release/
+!/HEW_213/DirectXTex/x64/Debug/
+!/HEW_213/DirectXTex/x64/Release/
+
+!/HEW_213/DirectXTex/**/DirectXTex.lib
+
+# Assimp
+!/HEW_213/External/Assimp/bin/
+!/HEW_213/External/Assimp/bin/*.dll
