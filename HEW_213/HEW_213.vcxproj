@@ -311,6 +311,7 @@ copy /Y "$(ProjectDir)External\Assimp\bin\assimp-vc143-mt.dll" "$(TargetDir)assi
     <ClInclude Include="Source\Game\Editor\EditorCommand.h" />
     <ClInclude Include="Source\Game\Editor\SceneEditActions.h" />
     <ClInclude Include="Source\Game\Enemies\Enemy.h" />
+    <ClInclude Include="Source\Game\Input\BoardPointer.h" />
     <ClInclude Include="Source\Game\Objects\FbxObject.h" />
     <ClInclude Include="Source\Game\Objects\GameObjectFactory.h" />
     <ClInclude Include="Source\Game\Objects\Goal.h" />
@@ -324,6 +325,7 @@ copy /Y "$(ProjectDir)External\Assimp\bin\assimp-vc143-mt.dll" "$(TargetDir)assi
     <ClInclude Include="Source\Game\Systems\StopAllSystem.h" />
     <ClInclude Include="Source\Game\Systems\TurnSystem.h" />
     <ClInclude Include="Source\Game\UI\HudPresenter.h" />
+    <ClInclude Include="Source\Game\UI\HudRenderer.h" />
     <ClInclude Include="Source\ThirdParty\nlohmann\json.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -23,6 +23,16 @@ public:
 		BoardVec2 velocity, BoardVec2 normal, float restitution);
 
 private:
-	std::vector<std::pair<GameObject*, GameObject*>>
-		m_previousContacts;
+	struct HitPair
+	{
+		GameObject* a;
+		GameObject* b;
+	};
+
+	std::vector<HitPair> m_previousContacts;
+
+	void SolvePair(
+		GameObject& a, GameObject& b,
+		std::vector<CollisionNotice>& out,
+		std::vector<HitPair>& current);
 };

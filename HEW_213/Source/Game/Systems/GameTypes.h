@@ -6,8 +6,7 @@
 
 class GameObject;
 
-// ・XZ平面
-// 　ｚは画面ＹではなくワールドＺ
+// XZ平面。ｚは画面ＹではなくワールドＺ
 struct BoardVec2
 {
 	float x = 0.0f;
@@ -31,27 +30,30 @@ struct ColliderConfig
 	ColliderShape shape = ColliderShape::Box;
 	float radius = 0.5f;
 	BoardVec2 halfExtent = { 0.5f,0.5f };
-	std::uint32_t mask = 0xFu; // bit 0 Player, 1 Enemy, 2 Boss, 3 Wall
 	float restitution = 1.0f;
 };
 struct PointerFrame
 {
 	bool valid = false; // フォーカス喪失・平面交差失敗時 : false
-	bool pressed = false, held = false, released = false;
+	bool pressed = false;
+	bool held = false;
+	bool released = false;
 	bool hitPlayer = false; // pressed時のみ必要
 	BoardVec2 point;
 };
 struct AimState
 {
-	bool dragging = false, released = false;
-	BoardVec2 anchor, point;
+	bool dragging = false;
+	bool released = false;
+	BoardVec2 anchor;
+	BoardVec2 point;
 };
 struct Contact
 {
 	GameObject* a = nullptr; // 非所有・この物理ステップ内のみ
 	GameObject* b = nullptr;
 	BoardVec2 normal; // B→A、単位長
-	float penetration = 0.0f;
+	float penetration = 0.0f; // 重なった距離
 };
 struct CollisionNotice
 {
@@ -61,8 +63,10 @@ struct CollisionNotice
 };
 struct HudInput
 {
-	int remainingShots = 0, nextEnemyCount = 0;
-	int bossHP = 0, bossMaxHP = 0;
+	int remainingShots = 0;
+	int nextEnemyCount = 0;
+	int bossHP = 0;
+	int bossMaxHP = 0;
 	std::vector<float> enemyHPRatios; // SceneGameの該当フレームの敵順
 	AimState aim;
 	BoardVec2 playerPosition;
@@ -75,8 +79,9 @@ struct HudView
 {
 	std::string shotsText, nextEnemiesText;
 	float bossRatio = 0.0f;
-	std::vector<float> enemyRaios;
+	std::vector<float> enemyRatios;
 	std::vector<HudColor> enemyColors; // 同じ敵順、描画はリード側
 	bool showArrow = false;
-	BoardVec2 arrowStart, arrowEnd;
+	BoardVec2 arrowStart;
+	BoardVec2 arrowEnd;
 };

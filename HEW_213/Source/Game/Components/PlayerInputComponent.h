@@ -25,6 +25,10 @@ public:
 	void DrawDebugInspector() override;
 #endif
 
+	void Sample(const PointerFrame& frame, bool canAim);
+	AimState GetAim()const;
+	void Cancel();
+
 private:
 	AimState m_aim;
 };

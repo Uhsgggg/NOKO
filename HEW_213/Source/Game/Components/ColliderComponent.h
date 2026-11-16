@@ -26,7 +26,6 @@ public:
 #endif
 
 	void Configure(const ColliderConfig& config);
-
 	const ColliderConfig& GetConfig() const;
 
 private:

@@ -139,6 +139,9 @@
     <Filter Include="ヘッダー ファイル\Game\UI">
       <UniqueIdentifier>{82e913e8-5882-4c07-b3e5-69edd7cea8f3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\Game\Input">
+      <UniqueIdentifier>{11558215-415d-42d8-a4e0-ee2857f0e39d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\App\Main.cpp">
@@ -437,8 +440,14 @@
     <ClInclude Include="Source\Game\UI\HudPresenter.h">
       <Filter>ヘッダー ファイル\Game\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Systems\StopAllSystem.h">
+    <ClInclude Include="Source\Game\Input\BoardPointer.h">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Systems\StopAllSystem.h">
+      <Filter>ヘッダー ファイル\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\HudRenderer.h">
+      <Filter>ヘッダー ファイル\Game\UI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
