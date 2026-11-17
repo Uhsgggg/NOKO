@@ -1,5 +1,5 @@
 #pragma once
-
+//テスト
 #include "Engine/Scene/Component.h"
 
 // オブジェクトを自動回転させるコンポーネント
