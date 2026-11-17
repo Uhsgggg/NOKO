@@ -1,0 +1,171 @@
+# リード向け｜Systemを作る方法（最初から練習）
+
+## 1. Systemとは何か？
+
+C++の新しい文法ではない。普通のクラスを作ってSceneGameから呼び出すだけ。
+
+例えば、球1つにHPや速度を持たせるならComponent。すべての球を調べてぶつかったか確認するならSystem。ターン管理もゲーム全体で共通なのでSystemに向いている。ダメージ式のように値を覚えておく必要がないものはstatic関数でもよい。
+
+| Component | System |
+|---|---|
+| GameObjectに付ける | SceneGameに置く |
+| GameObjectがUpdateを呼ぶ | SceneGameが必要な時に関数を呼ぶ |
+| Clone、Registryへの登録が必要 | 今回はClone、Registryとも不要 |
+
+System用の基底クラスやSingletonは作らなくてよい。
+
+## 2. 練習：全部の球をTキーで止める
+
+この練習は本番には不要。既存MoveComponentを使って、System追加の仕組みだけを確かめる。
+
+### 作業1：hファイルを作る
+
+`Source/Game/Systems/StopAllSystem.h`
+
+```cpp
+#pragma once
+#include <memory>
+#include <vector>
+class GameObject;
+
+class StopAllSystem
+{
+public:
+    void Stop(const std::vector<std::unique_ptr<GameObject>>& objects);
+};
+```
+
+Componentを継承しない。StopはSceneGameから物体一覧を受け取る関数。
+
+### 作業2：cppに中身を書く
+
+`Source/Game/Systems/StopAllSystem.cpp`
+
+```cpp
+#include "StopAllSystem.h"
+#include "Engine/Scene/GameObject.h"
+#include "Game/Components/MoveComponent.h"
+
+void StopAllSystem::Stop(
+    const std::vector<std::unique_ptr<GameObject>>& objects)
+{
+    for (const auto& pObject : objects)
+    {
+        if (!pObject) continue;
+        auto* pMove = pObject->GetComponent<MoveComponent>();
+        if (pMove && pMove->IsEnabled())
+        {
+            pMove->SetVelocity(0, 0, 0);
+        }
+    }
+}
+```
+
+全物体を順番に調べ、MoveComponentを持つ物体の速度だけ0にする。持っていない箱や床は何もしない。
+
+### 作業3：SceneGameに持たせる
+
+SceneGame.hのinclude部分に追加。
+
+```cpp
+#include "Game/Systems/StopAllSystem.h"
+```
+
+SceneGameクラスのprivateに追加。
+
+```cpp
+StopAllSystem m_stopAll;
+```
+
+普通のメンバ変数なのでnewもdeleteも不要。SceneGameが作られると同時に作られる。
+
+### 作業4：SceneGame::Updateで呼び出す
+
+`if (shouldUpdateGame)` の中の既存のGameObject更新ループより前に追加。
+
+```cpp
+if (IsKeyTrigger('T'))
+{
+    m_stopAll.Stop(m_objects);
+}
+```
+
+ここを追加して初めてSystemが動く。VSにcppが追加されているか確認し、MoveComponentを付けた球を複数用意してF1でPlayに切り替える。Tを押して全球が停止すれば成功。Edit中には働かない。練習後は追加した接続を外す。
+
+## 3. なぜ `const vector&` でも球を動かせる？
+
+`objects` は物体を管理するポインタの一覧。constで受け取ると一覧そのものを増やしたり消したりできないが、ポインタの指すGameObject自体は変更できる。
+
+これでSceneGameが物体を管理したまま、Systemに必要な処理だけを任せられる。参照やポインタは関数を呼んでいる間だけ使い、System内に長期間保存しない（衝突履歴は切替時にResetする設計）。
+
+## 4. 本番のCollisionSystemをつなぐ（完成後の例）
+
+以下は実装が揃ってから使う設計例であり、そのまま貼っても新しいAPIがなければ動かない。
+
+SceneGame.hに完成済みSystemのhをincludeする。
+
+```cpp
+#include "Game/Systems/CollisionSystem.h"
+#include "Game/Systems/TurnSystem.h"
+```
+
+privateに置く。
+
+```cpp
+CollisionSystem m_collision;
+TurnSystem m_turn;
+```
+
+入力・発射が終わった後に、既存の全物体更新ループを次の物理更新の形へ置き換える（二重にUpdateしない）。
+
+```cpp
+if (m_turn.IsResolving())
+{
+    const int substeps = 4; // 仮値
+    const float dt = deltaTime / substeps;
+    for (int step = 0; step < substeps; ++step)
+    {
+        for (auto& pObject : m_objects)
+        {
+            if (pObject && pObject->IsActive())
+                pObject->Update(dt);
+        }
+        std::vector<CollisionNotice> notices;
+        m_collision.Step(m_objects, notices);
+        // リードが作る：ApplyCollisionNotices(notices);
+    }
+    // 全動球のIsMovingを調べてEndIfStoppedへ。
+    // trueなら勝敗判定 → 続けるなら敵生成。
+}
+```
+
+IsActiveやApplyCollisionNoticesは新規機能。詳細な入力・HP・HUDへの接続は01の資料を見る。既存の `1.0f / FPS` は今回そのまま、実際に経過した時間を使う対応は後日検討する。待機中にもAutoRotate等を動かしたい場合は物理処理と表示用更新を分ける。
+
+### なぜ4回に分ける？
+
+球が1回で長い距離を移動すると、壁の手前からいきなり壁の向こう側へ行ってしまい、衝突に気付かないことがある。そこで少し進む→衝突確認を4回繰り返す。1/60秒の更新なら1回は1/240秒。高速移動によるすり抜けを完全に防げるわけではない。入力や手数消費まで4回繰り返さない。
+
+## 5. 新しいSystemを作るときの確認表
+
+| 決めること | CollisionSystemの例 |
+|---|---|
+| 何を受け取る？ | 物体の一覧 |
+| 何を返す？ | 衝突したことを知らせる一覧 |
+| 何を変更してよい？ | 位置・速度・反射回数 |
+| 何を変更しない？ | HP・敵の削除・画面の表示 |
+| いつ呼ぶ？ | 移動後 |
+| いつ初期化する？ | Play開始/終了、Load、リスタート、Release起動 |
+
+Componentは自動でUpdateが呼ばれるが、Systemは呼ばなければ動かない。SceneGameは必要な順番でSystemを呼ぶことに集中し、計算の細かい中身は各Systemに任せる。
+
+## 補足用語
+
+| 用語 | 意味 |
+|---|---|
+| メンバ変数 | クラスが内部に持つ変数 |
+| const / & | 変更を制限する指定 / 元の変数を参照する指定 |
+| unique_ptr | 物体を1つの場所が所有し、自動で破棄するポインタ |
+| Singleton | 1個だけ存在するよう作るクラスの設計方法（今回は不要） |
+| Step | 物理処理を1回進める関数 |
+| Reset | 前のゲームの状態を消して初期値に戻す処理 |
+| サブステップ | 1回の更新時間を小さく分ける方法 |

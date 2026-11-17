@@ -1,0 +1,163 @@
+# 黒野｜HPバー・手数・敵追加数・発射方向を画面に表示
+
+**目標：数字やHPが変わったら、画面の表示も同じように変わるようにする。**
+担当表：37–39,42行（ID9,10）。ブランチ：`feature/hud`
+
+敵のHPを減らす処理、球の移動、マウス入力を自分で作る必要はない。まずは手で数字を設定して表示の結果を確認する。
+
+## 1. 作るファイル
+
+`Source/Game/UI/HudPresenter.h/.cpp` を使う。ほかにUI用のcppが必要になったらリードと相談する。
+
+実装する関数はまず1つ：
+
+```cpp
+HudView HudPresenter::Build(const HudInput& input, float maxDrag)
+```
+
+hでstaticとして宣言されている。これは受け取った情報を、描画に使える形に整理して返す関数。`GameTypes.h` にあるHudInput/HudViewの型は変更しない。
+
+## 2. 何が渡されるの？
+
+| HudInputの変数 | 内容 |
+|---|---|
+| remainingShots | 残り手数（例：7） |
+| nextEnemyCount | 追加予定の敵の数（例：3） |
+| bossHP / bossMaxHP | ボスの今のHPと最大HP |
+| enemyHPRatios | 各敵のHP割合の一覧。0〜1を想定 |
+| aim.dragging | いま引っ張っているか |
+| aim.anchor / aim.point | ドラッグ開始時と現在のゲーム内座標 |
+| playerPosition | プレイヤーのゲーム内座標 |
+
+`maxDrag` は矢印の最大長さを決める値（仮値3）。座標は画面のピクセルではなくゲーム内のX/Z。
+
+## 3. 作業1：残り手数と敵追加数を文字にする
+
+まずこれだけでよい。Buildの中でHudViewを1つ作り、最後にreturnする。
+
+```cpp
+#include "HudPresenter.h"
+
+HudView HudPresenter::Build(const HudInput& input, float maxDrag)
+{
+    HudView view;
+    int shots = input.remainingShots;
+    if (shots < 0) shots = 0;
+    view.shotsText = std::to_string(shots);
+
+    // 追加予定数も同じように nextEnemiesText へ設定する
+    // 以降の作業はここに追加する
+
+    return view;
+}
+```
+
+残り手数7なら文字列"7"。0未満なら"0"。自分で手数を減らさない。敵追加予定数も同様に処理。
+
+## 4. 作業2：ボスHPバーの長さを計算する
+
+Buildのreturnの前に書く。最大HPが0以下ならview.bossRatio=0。それ以外は現在HPを最大HPで割る。
+
+```cpp
+if (input.bossMaxHP > 0)
+{
+    view.bossRatio = static_cast<float>(input.bossHP)
+                   / input.bossMaxHP;
+}
+if (view.bossRatio < 0.0f) view.bossRatio = 0.0f;
+if (view.bossRatio > 1.0f) view.bossRatio = 1.0f;
+```
+
+HP5、最大HP10なら0.5。バー全体の幅が200なら、色を塗る幅は200×0.5=100。実際の矩形描画はリードが用意する関数を使う。
+
+## 5. 作業3：敵のHPに応じて色を決める
+
+`input.enemyHPRatios` の値をfor文で1つずつ処理する。各値を0〜1に収め、`view.enemyRatios` に追加する。同時に、割合に応じた色を `view.enemyColors` に追加する。
+
+例：HPいっぱいなら緑、半分なら黄、0付近なら赤。具体的な境界値や色はリードと決める（仮案）。HP0で実際に非表示にするのはリード。
+
+`HudColor` にはr（赤）・g（緑）・b（青）・a（透明度）がある。各0〜1。緑なら例として `{0,1,0,1}`。敵が3体なら色も3個。元の敵と順番を変えない。リードがその色をGameObjectのSetColorで反映する。FBXは元の色と混ざるので、球と同じ発色にならないことがある。
+
+## 6. 作業4：引っ張っているときの矢印を計算する
+
+始点はプレイヤーの中心。引っ張っている方向の反対側に矢印を出す。
+
+1. `input.aim.dragging` がfalseならview.showArrow=falseのままにする。
+2. maxDragが0以下や不正値なら表示しない。
+3. X/Zそれぞれ `anchor - point` で矢印の向きを求める。
+4. `sqrt(x*x+z*z)` で長さを計算する。長さ0なら何も表示しない。
+5. 長さがmaxDragより大きければ、XとZに `maxDrag / 長さ` を掛けて短くする。
+6. view.arrowStartにplayerPosition、view.arrowEndに「playerPosition + 制限したX/Zの差」を設定する。view.showArrow=true。
+
+例：プレイヤー(1,0)、開始(0,0)、現在(-2,0)。矢印は(1,0)から(3,0)に向かう。10まで引っ張ってもmaxDragが3なら長さ3で止まる。
+
+色は仮。矢印は表示するだけなので球の速度や座標を変えない。
+
+## 7. 画面に表示する（リードの描画関数ができた後）
+
+位置の仮案：左上にボスHP、右下に残り手数。敵追加予定数と矢印も見えるようにする。
+
+```text
++------------------------------------+
+| BOSS HP [========    ]   追加予定3 |
+|                                    |
+|            敵     敵               |
+|                                    |
+|       青い球 ---->                 |
+|                          残り手数7 |
++------------------------------------+
+```
+
+リードが数字・画像・矩形・ゲーム内の線を描く関数を作る。関数名は未確定なので、自分でDirectXやShaderを書き換えない。Buildで作ったHudViewを渡すだけにする。既存SpriteはMainで初期化されているが、文字を描画する仕組みは別途必要。DebugでImGuiの表示を使って確認してもよいが、本番ReleaseではSprite等を使用する。
+
+手数が9から10になってもはみ出さない、画面サイズを変更しても読めるように確認する。
+
+## 8. 自分だけでテストする方法
+
+本番のSceneGameを書き換えず、ローカルのテスト用コードかリードのテスト環境で、次のように仮の値を渡す。
+
+```cpp
+HudInput input;
+input.remainingShots = 7;
+input.nextEnemyCount = 3;
+input.bossHP = 5;
+input.bossMaxHP = 10;
+HudView result = HudPresenter::Build(input, 3.0f);
+// result.shotsText は "7"
+// result.nextEnemiesText は "3"
+// result.bossRatio は 0.5
+```
+
+| 入力 | 期待される結果 | 実際の結果 |
+|---|---|---|
+| ボスHP10、最大10 | bossRatio=1 | |
+| HP5、最大10 | 0.5 | |
+| HP0、最大10 / HP0、最大0 | 0 | |
+| 残り手数0、1、10 | "0"、"1"、"10" | |
+| 敵追加予定0、1、10 | "0"、"1"、"10" | |
+| 敵3体のHP割合1、0.5、0 | 敵順を保った色3個と割合3個 | |
+| dragging=false | showArrow=false | |
+| 開始(0,0)、現在(-2,0)、球(1,0)、最大3 | 矢印(1,0)→(3,0) | |
+| 距離10、最大3 | 長さ3 | |
+
+統合後は実際の手数減少、移動中の再発射不可、HPの変化、最終手の勝敗、敵追加予定、ドラッグ終了で矢印が消えること、画面サイズ変更をリードと確認。Debug/Releaseの結果を報告する。
+
+## 9. 使ってよいもの・変更してはいけないもの
+
+標準C++のstring、vector、数学関数、配布したGameTypes.hの型、リードが作る描画関数。HealthやTurnSystemの内部は調べなくてよい。
+
+禁止：HP・手数の値を更新する、衝突を実装する、SceneGame/Registry/DirectX/Shaderなど既存共通ファイルを勝手に変更する。
+
+## 補足用語
+
+| 用語 | 意味 |
+|---|---|
+| HUD / UI | ゲーム中に数字・HPバーなどを表示する部分 |
+| HudInput | ゲームから受け取る情報をひとまとめにしたもの |
+| HudView | 描画に渡すために加工した情報 |
+| ratio | 割合。0.5は50% |
+| std::to_string | 数値を文字列へ変える関数 |
+| vector | 複数の値を順番に保存する入れ物 |
+| RGBA | 赤・緑・青・不透明度の4つで色を表現 |
+| ダミー値 | ゲーム本体を待たずに、手で設定するテスト用の値 |
+| Sprite | 画像などを画面へ表示するための既存クラス |
