@@ -7,7 +7,7 @@ class BallMotionComponent : public Component
 {
 public:
 	explicit BallMotionComponent(GameObject* owner);
-
+	
 	const char* GetTypeId() const override
 	{
 		return "BallMotion";
