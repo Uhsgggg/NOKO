@@ -224,6 +224,7 @@ copy /Y "$(ProjectDir)External\Assimp\bin\assimp-vc143-mt.dll" "$(TargetDir)assi
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Game\Components\PlayerInputComponent.cpp" />
     <ClCompile Include="Source\Game\Editor\SceneEditActions.cpp" />
     <ClCompile Include="Source\Game\Objects\FbxObject.cpp" />
     <ClCompile Include="Source\Game\Objects\GameObjectFactory.cpp" />
