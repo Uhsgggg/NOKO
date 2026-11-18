@@ -270,6 +270,12 @@
     <ClCompile Include="Source\Game\UI\HudPresenter.cpp">
       <Filter>ソース ファイル\Game\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Systems\TurnSystem.cpp">
+      <Filter>ソース ファイル\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Components\BallMotionComponent.cpp">
+      <Filter>ソース ファイル\Game\Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\App\Defines.h">
