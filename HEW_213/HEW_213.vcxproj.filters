@@ -142,6 +142,9 @@
     <Filter Include="ソース ファイル\Game\Input">
       <UniqueIdentifier>{11558215-415d-42d8-a4e0-ee2857f0e39d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ヘッダー ファイル\Game\Input">
+      <UniqueIdentifier>{721b619a-09f0-47dd-bfde-270690bb96fc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\App\Main.cpp">
@@ -264,11 +267,14 @@
     <ClCompile Include="Source\Engine\Scene\GameObject.cpp">
       <Filter>ソース ファイル\Engine\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Systems\StopAllSystem.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\UI\HudPresenter.cpp">
       <Filter>ソース ファイル\Game\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Systems\StopAllSystem.cpp">
+      <Filter>ソース ファイル\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Input\BoardPointer.cpp">
+      <Filter>ソース ファイル\Game\Input</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -440,14 +446,14 @@
     <ClInclude Include="Source\Game\UI\HudPresenter.h">
       <Filter>ヘッダー ファイル\Game\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Input\BoardPointer.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Systems\StopAllSystem.h">
       <Filter>ヘッダー ファイル\Game\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\HudRenderer.h">
       <Filter>ヘッダー ファイル\Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Input\BoardPointer.h">
+      <Filter>ヘッダー ファイル\Game\Input</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

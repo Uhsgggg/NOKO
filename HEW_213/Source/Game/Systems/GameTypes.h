@@ -38,7 +38,6 @@ struct PointerFrame
 	bool pressed = false;
 	bool held = false;
 	bool released = false;
-	bool hitPlayer = false; // pressedŽž‚Ì‚Ý•K—v
 	BoardVec2 point;
 };
 struct AimState
