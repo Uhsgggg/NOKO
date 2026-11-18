@@ -2,11 +2,11 @@
 
 #include "Engine/Scene/Component.h"
 #include "Game/Systems/GameTypes.h"
-
+//フェッチ確認コメント
 class PlayerInputComponent : public Component
 {
 public:
-	explicit PlayerInputComponent(GameObject* owner);
+	explicit PlayerInputComponent(GameObject* pOwner);
 
 	const char* GetTypeId() const override
 	{
