@@ -1,3 +1,11 @@
+//========================================//
+// 
+// HudRenderer.h
+// 
+// HudPresenterが返す表示データを
+// Spriteで描く処理
+// 
+//========================================//
 #pragma once
 
 #include "Game/Systems/GameTypes.h"
@@ -11,6 +19,7 @@ public:
 
 private:
 	Texture m_white;
+	bool m_ready = false;
 	void Rect(
 		float x, float y,
 		float w, float h,
@@ -20,4 +29,8 @@ private:
 		float pixel,
 		const std::string& text,
 		HudColor color);
+	void DrawImage(
+		Texture* pTexture,
+		float x, float y,
+		float width, float height);
 };

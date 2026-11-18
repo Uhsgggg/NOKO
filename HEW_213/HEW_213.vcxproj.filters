@@ -276,6 +276,9 @@
     <ClCompile Include="Source\Game\Input\BoardPointer.cpp">
       <Filter>ソース ファイル\Game\Input</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\UI\HudRenderer.cpp">
+      <Filter>ソース ファイル\Game\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\App\Defines.h">
