@@ -2,6 +2,12 @@
 
 #include "Game/Components/AutoRotateComponent.h"
 #include "Game/Components/MoveComponent.h"
+#include "Game/Components/ColliderComponent.h"
+#include "Game/Components/BallMotionComponent.h"
+#include "Game/Components/HealthComponent.h"
+#include "Game/Components/PlayerInputComponent.h"
+#include "Game/Components/PlayerLaunchComponent.h"
+#include "Game/Components/ReflectionCounterComponent.h"
 
 #include <stdexcept>
 #include <cmath>
@@ -32,8 +38,8 @@ namespace
 	}
 }
 
-const vector<ComponentRegistry::Entry>& 
-	ComponentRegistry::GetEntries()
+const vector<ComponentRegistry::Entry>&
+ComponentRegistry::GetEntries()
 {
 	// ・ラムダ式で記述
 	// 　　別の名前付き関数を定義しなくても
@@ -48,11 +54,11 @@ const vector<ComponentRegistry::Entry>&
 			"Auto Rotate", // Inspectorの表示名
 
 			// 生成
-			[](GameObject* owner)->unique_ptr<Component>
+			[](GameObject* pOwner)->unique_ptr<Component>
 			{
 				return unique_ptr<Component>(
 					new AutoRotateComponent(
-						owner,
+						pOwner,
 						0.0f,
 						360.0f,
 						0.0f
@@ -60,49 +66,49 @@ const vector<ComponentRegistry::Entry>&
 				);
 			},
 
-		// 保存
-		[](const Component& base, json& data)
-		{
-			// 今回の場合、
-			// 〇dynamic_cast … 実際に指定した派生型へ
-			// 　　　　　　　　　変換できるか確認する。
-			// ✕static_cast  … 基底クラスからの変換では、
-			// 　　　　　　　　　実際の派生型を実行時に確認しない。
-			// これは登録ミスによって別のComponentが渡された場合、
-			// 安全に失敗するとは限らないため。
-			const AutoRotateComponent& c =
-				dynamic_cast<const AutoRotateComponent&>(base);
+			// 保存
+			[](const Component& base, json& data)
+			{
+				// 今回の場合、
+				// 〇dynamic_cast … 実際に指定した派生型へ
+				// 　　　　　　　　　変換できるか確認する。
+				// ✕static_cast  … 基底クラスからの変換では、
+				// 　　　　　　　　　実際の派生型を実行時に確認しない。
+				// これは登録ミスによって別のComponentが渡された場合、
+				// 安全に失敗するとは限らないため。
+				const auto& c =
+					dynamic_cast<const AutoRotateComponent&>(base);
 
-			const float* speed = c.GetRotationSpeed();
+				const float* speed = c.GetRotationSpeed();
 
-			data["speed"] = {
-				speed[0],
-				speed[1],
-				speed[2]
-			};
+				data["speed"] = {
+					speed[0],
+					speed[1],
+					speed[2]
+				};
+			},
+
+			// 読み込み
+			[](Component& base, const json& data)
+			{
+				float speed[3];
+
+				ReadVector3(
+					data.at("speed"),
+					speed,
+					"speed"
+				);
+
+				auto& c =
+					dynamic_cast<AutoRotateComponent&>(base);
+
+				c.SetRotationSpeed(
+					speed[0],
+					speed[1],
+					speed[2]
+				);
+			}
 		},
-
-		// 読み込み
-		[](Component& base, const json& data)
-		{
-			float speed[3];
-
-			ReadVector3(
-				data.at("speed"),
-				speed,
-				"speed"
-			);
-
-			AutoRotateComponent& c =
-				dynamic_cast<AutoRotateComponent&>(base);
-
-			c.SetRotationSpeed(
-				speed[0],
-				speed[1],
-				speed[2]
-			);
-		}
-	},
 
 		//========================================
 		// Move
@@ -112,11 +118,11 @@ const vector<ComponentRegistry::Entry>&
 			"Move",
 
 			// 生成
-			[](GameObject* owner)->unique_ptr<Component>
+			[](GameObject* pOwner)->unique_ptr<Component>
 			{
 				return unique_ptr<Component>(
 					new MoveComponent(
-						owner,
+						pOwner,
 						1.0f,
 						1.0f,
 						0.0f
@@ -127,7 +133,7 @@ const vector<ComponentRegistry::Entry>&
 			// 保存
 			[](const Component& base, json& data)
 			{
-				const MoveComponent& c =
+				const auto& c =
 					dynamic_cast<const MoveComponent&>(base);
 
 				const float* velocity = c.GetVelocity();
@@ -150,7 +156,7 @@ const vector<ComponentRegistry::Entry>&
 					"velocity"
 				);
 
-				MoveComponent& c =
+				auto& c =
 					dynamic_cast<MoveComponent&>(base);
 
 				c.SetVelocity(
@@ -160,17 +166,15 @@ const vector<ComponentRegistry::Entry>&
 				);
 			}
 		}
-
-		//========================================
-		// 追加はここから
-		//========================================
 	};
+
+	// ここから先は1335行目から
 
 	return entries;
 }
 
-const ComponentRegistry::Entry* 
-	ComponentRegistry::Find(const std::string& typeId)
+const ComponentRegistry::Entry*
+ComponentRegistry::Find(const std::string& typeId)
 {
 	const vector<Entry>& entries = GetEntries();
 
