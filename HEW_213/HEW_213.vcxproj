@@ -220,6 +220,7 @@ copy /Y "$(ProjectDir)External\Assimp\bin\assimp-vc143-mt.dll" "$(TargetDir)assi
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Game\Components\HealthComponent.cpp" />
     <ClCompile Include="Source\Game\Components\MoveComponent.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
@@ -236,6 +237,7 @@ copy /Y "$(ProjectDir)External\Assimp\bin\assimp-vc143-mt.dll" "$(TargetDir)assi
     <ClCompile Include="Source\Game\Scenes\SceneGame.cpp" />
     <ClCompile Include="Source\Game\Scenes\SceneGameplay.cpp" />
     <ClCompile Include="Source\Game\Serialization\SceneSerializer.cpp" />
+    <ClCompile Include="Source\Game\Systems\DamageFormula.cpp" />
     <ClCompile Include="Source\Game\Systems\StopAllSystem.cpp" />
     <ClCompile Include="Source\Game\Systems\TurnSystem.cpp" />
     <ClCompile Include="Source\Game\UI\HudPresenter.cpp" />
