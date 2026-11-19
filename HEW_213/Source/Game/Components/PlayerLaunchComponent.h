@@ -6,7 +6,7 @@
 class PlayerLaunchComponent : public Component
 {
 public:
-	explicit PlayerLaunchComponent(GameObject* owner);
+	explicit PlayerLaunchComponent(GameObject* pOwner);
 
 	const char* GetTypeId() const override
 	{

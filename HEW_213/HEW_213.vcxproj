@@ -215,6 +215,7 @@ copy /Y "$(ProjectDir)External\Assimp\bin\assimp-vc143-mt.dll" "$(TargetDir)assi
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Game\Components\BallMotionComponent.cpp" />
     <ClCompile Include="Source\Game\Components\ComponentRegistry.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
@@ -223,6 +224,8 @@ copy /Y "$(ProjectDir)External\Assimp\bin\assimp-vc143-mt.dll" "$(TargetDir)assi
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Game\Components\PlayerInputComponent.cpp" />
+    <ClCompile Include="Source\Game\Components\PlayerLaunchComponent.cpp" />
     <ClCompile Include="Source\Game\Editor\SceneEditActions.cpp" />
     <ClCompile Include="Source\Game\Input\BoardPointer.cpp" />
     <ClCompile Include="Source\Game\Objects\FbxObject.cpp" />
@@ -233,6 +236,7 @@ copy /Y "$(ProjectDir)External\Assimp\bin\assimp-vc143-mt.dll" "$(TargetDir)assi
     <ClCompile Include="Source\Game\Scenes\SceneGame.cpp" />
     <ClCompile Include="Source\Game\Serialization\SceneSerializer.cpp" />
     <ClCompile Include="Source\Game\Systems\StopAllSystem.cpp" />
+    <ClCompile Include="Source\Game\Systems\TurnSystem.cpp" />
     <ClCompile Include="Source\Game\UI\HudPresenter.cpp" />
     <ClCompile Include="Source\Game\UI\HudRenderer.cpp" />
   </ItemGroup>
