@@ -285,14 +285,20 @@
     <ClCompile Include="Source\Game\Components\BallMotionComponent.cpp">
       <Filter>ソース ファイル\Game\Components</Filter>
     </ClCompile>
-	  <ClCompile Include="Source\Game\Systems\DamageFormula.cpp">
-		  <Filter>ソース ファイル</Filter>
-	  </ClCompile>
     <ClCompile Include="Source\Game\Components\PlayerInputComponent.cpp">
       <Filter>ソース ファイル\Game\Components</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Components\PlayerLaunchComponent.cpp">
       <Filter>ソース ファイル\Game\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Systems\DamageFormula.cpp">
+      <Filter>ソース ファイル\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Components\HealthComponent.cpp">
+      <Filter>ソース ファイル\Game\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Scenes\SceneGameplay.cpp">
+      <Filter>ソース ファイル\Game\Scenes</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
