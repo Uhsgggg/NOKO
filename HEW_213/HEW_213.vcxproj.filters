@@ -291,6 +291,9 @@
     <ClCompile Include="Source\Game\Components\PlayerLaunchComponent.cpp">
       <Filter>ソース ファイル\Game\Components</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Scenes\SceneGameplay.cpp">
+      <Filter>ソース ファイル\Game\Scenes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\App\Defines.h">
@@ -449,7 +452,7 @@
     <ClInclude Include="Source\Game\Systems\CollisionSystem.h">
       <Filter>ヘッダー ファイル\Game\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Systems\DamageFomula.h">
+    <ClInclude Include="Source\Game\Systems\DamageFormula.h">
       <Filter>ヘッダー ファイル\Game\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Systems\GameTypes.h">

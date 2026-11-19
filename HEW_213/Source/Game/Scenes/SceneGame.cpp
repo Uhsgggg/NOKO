@@ -10,8 +10,8 @@
 #include "SceneGame.h"
 
 #include "App/Defines.h"
-#include "ThirdParty/nlohmann/json.hpp"
 #include "Engine/Input/Input.h"
+#include "ThirdParty/nlohmann/json.hpp"
 
 #include "Engine/Graphics/DirectX/ShaderList.h"
 #include "Engine/Graphics/Geometory.h"
@@ -26,6 +26,20 @@
 #include "Game/Objects/PrimitiveObject.h"
 #include "Game/Objects/FbxObject.h"
 
+#include "Engine/Graphics/DirectX/DirectX.h"
+
+#include "Game/Components/BallMotionComponent.h"
+#include "Game/Components/ColliderComponent.h"
+#include "Game/Components/HealthComponent.h"
+#include "Game/Components/MoveComponent.h"
+#include "Game/Components/PlayerInputComponent.h"
+#include "Game/Components/PlayerLaunchComponent.h"
+#include "Game/Components/ReflectionCounterComponent.h"
+
+#include "Game/Systems/DamageFormula.h"
+
+#include "Game/UI/HudPresenter.h"
+
 #include <Windows.h>
 #include <algorithm>
 #include <cmath>
@@ -33,19 +47,21 @@
 
 #ifdef _DEBUG
 #include "Engine/Debug/DebugEditor.h"
+#include "imgui.h"
 #include "Engine/Scene/SceneRayPicker.h"
 #include "Game/Editor/SceneEditActions.h"
 #endif
 
 using namespace DirectX;
 using namespace std;
+using namespace ImGui;
 
 // namespace はこのcppファイルの中だけで使用する関数をまとめる仕組み
 namespace
 {
 	// ステージの保存先
 	const char* const kStageFilePath =
-		"Assets/Stages/Stage01.json";
+		"Assets/Stages/StageProto.json";
 
 	// プロトタイプの仮仕様。企画確定後に変更するところ
 	constexpr int kShots = 10;
@@ -104,6 +120,15 @@ SceneGame::SceneGame()
 	// Play用カメラはDebug・Release共通
 	m_pPlayCamera.reset(new CameraPlay());
 
+	LoadGameplayStage();
+	if (!m_hudRenderer.Initialize())
+	{
+		MessageBoxA(nullptr, "HUD texture creation failed.", "HUD Error", MB_OK | MB_ICONERROR);
+	}
+
+#ifndef _DEBUG
+	ResetGamePlay();
+#endif
 
 	//========================================
 	// 保存済みステージを自動読み込み
@@ -177,6 +202,7 @@ void SceneGame::Update()
 
 	// Edit Mode中はゲームを更新しない
 	shouldUpdateGame = !m_isEditMode;
+	UpdateColliderDebug();
 #endif
 
 	//========================================
@@ -184,14 +210,19 @@ void SceneGame::Update()
 	//========================================
 	if (shouldUpdateGame)
 	{
-		// 全GameObjectのコンポーネントを更新
-		for (auto& pObject : m_objects)
+		if (IsKeyTrigger('R'))
 		{
-			if (pObject)
+#ifdef _DEBUG
+			ExitPlayMode();
+			EnterPlayMode();
+#else
+			if (LoadGameplayStage())
 			{
-				pObject->Update(deltaTime);
+				ResetGamePlay();
 			}
+#endif
 		}
+		UpdateGameplay(deltaTime);
 	}
 
 	//========================================
@@ -263,7 +294,10 @@ void SceneGame::Draw()
 	//========================================
 	for (auto& pObject : m_objects)
 	{
-		pObject->Draw();
+		if (pObject && pObject->IsActive())
+		{
+			pObject->Draw();
+		}
 	}
 
 	//========================================
@@ -277,7 +311,19 @@ void SceneGame::Draw()
 #endif
 
 #ifdef _DEBUG
-	if (m_isEditMode) DrawEditor();
+	// モードに関係なく表示する
+	DrawColliderDebugPanel();
+	DrawColliderDebug();
+	if (m_isEditMode)
+	{
+		DrawEditor();
+	}
+	else
+	{
+		DrawGameplayHUD();
+	}
+#else
+	DrawGameplayHUD();
 #endif
 }
 
@@ -302,26 +348,26 @@ void SceneGame::DrawEditor()
 	if (DebugEditor::TryGetSceneClick(
 		mouseX,
 		mouseY,
-		viewportWidth,
-		viewportHeight))
-	{
-		// Raycastでオブジェクトを探す
-		int selectedIndex = SceneRayPicker::Pick(
-			m_objects,
-			*m_pCamera,
-			mouseX,
-			mouseY,
 			viewportWidth,
-			viewportHeight
-		);
+			viewportHeight))
+			{
+				// Raycastでオブジェクトを探す
+				int selectedIndex = SceneRayPicker::Pick(
+					m_objects,
+					*m_pCamera,
+					mouseX,
+					mouseY,
+					viewportWidth,
+					viewportHeight
+				);
 
-		// オブジェクトに当たった場合だけ選択
-		if (selectedIndex >= 0)
-		{
-			DebugEditor::SetSelectedObjectIndex(
-				selectedIndex
-			);
-		}
+				// オブジェクトに当たった場合だけ選択
+				if (selectedIndex >= 0)
+				{
+					DebugEditor::SetSelectedObjectIndex(
+						selectedIndex
+					);
+				}
 	}
 
 	//========================================
@@ -370,10 +416,95 @@ void SceneGame::DrawEditor()
 	//========================================
 	// Playカメラ設定
 	//========================================
-	DebugEditor::DrawPlayCamera(
-		*m_pPlayCamera,
-		*m_pCamera
-	);
+	DebugEditor::DrawPlayCamera(*m_pPlayCamera, *m_pCamera);
+}
+#endif
+
+
+
+
+#ifdef _DEBUG
+void SceneGame::UpdateColliderDebug()
+{
+	for (auto& pObject : m_objects)
+	{
+		if (!pObject) continue;
+		auto* pCollider = pObject->GetComponent<ColliderComponent>();
+		if (pCollider)
+		{
+			pCollider->UpdateDebugHit();
+		}
+	}
+}
+#endif
+
+
+
+
+#ifdef _DEBUG
+void SceneGame::DrawColliderDebugPanel()
+{// ImGui
+	if (GetCurrentContext()) return;
+
+	float centerX = GetIO().DisplaySize.x * 0.5f;
+	SetNextWindowPos(ImVec2(centerX, 12.0f),
+		ImGuiCond_FirstUseEver, ImVec2(0.5f, 0.0f));
+
+	if (Begin("Collider Debug", nullptr,
+		ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse))
+	{
+		Checkbox("Show Colliders", &m_bShowColliders);
+		TextColored(ImVec4(0.1f, 0.65f, 1.0f, 1.0f), "Player");
+		SameLine();
+		TextColored(ImVec4(0.1f, 0.2f, 0.2f, 1.0f), "Enemy");
+		SameLine();
+		TextColored(ImVec4(0.8f, 0.3f, 1.0f, 1.0f), "Boss");
+		SameLine();
+		TextColored(ImVec4(1.0f, 0.85f, 0.15f, 1.0f), "Wall");
+		TextUnformatted("White = Hit (9 frames)");
+	}
+	End();
+}
+#endif
+
+
+
+
+#ifdef _DEBUG
+void SceneGame::DrawColliderDebug()
+{
+	if (!m_bShowColliders) return;
+
+	// 深度とブレンドの元の設定を保存しておく
+	ID3D11DepthStencilState* pDepth = nullptr;
+	UINT stencil = 0;
+	ID3D11BlendState* pBlend = nullptr;
+	FLOAT blendFactor[4] = {};
+	UINT sampleMask = 0;
+	GetContext()->OMGetDepthStencilState(&pDepth, &stencil);
+	GetContext()->OMGetBlendState(&pBlend, blendFactor, &sampleMask);
+
+	// モデルに隠れず、半透明で線を描く。
+	SetDepthTest(false);
+	SetBlendMode(BLEND_ALPHA);
+
+	for (auto& pObject : m_objects)
+	{
+		if (!pObject || !pObject->IsActive()) continue;
+		auto* pCollider = pObject->GetComponent<ColliderComponent>();
+		if (pCollider)
+		{
+			pCollider->DrawDebug();
+		}
+	}
+
+	// 後から描くHUDなどに影響させない。
+	GetContext()->OMSetDepthStencilState(pDepth, stencil);
+	GetContext()->OMSetBlendState(pBlend, blendFactor, sampleMask);
+	if (pDepth)
+		pDepth->Release();
+	if (pBlend)
+		pBlend->Release();
 }
 #endif
 
@@ -538,6 +669,7 @@ void SceneGame::EnterPlayMode()
 
 	// Play Modeへ変更
 	m_isEditMode = false;
+	ResetGamePlay();
 }
 
 
@@ -559,7 +691,10 @@ void SceneGame::ExitPlayMode()
 	//========================================
 	// Play用のオブジェクトを破棄
 	//========================================
+	m_boardPointer.Reset();
+	m_collision.Reset();
 	m_editObjects.clear();
+	m_gameReady = false;
 
 	// Edit Modeへ変更
 	m_isEditMode = true;
