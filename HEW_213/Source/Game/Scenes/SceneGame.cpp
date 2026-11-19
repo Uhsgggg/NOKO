@@ -26,8 +26,6 @@
 #include "Game/Objects/PrimitiveObject.h"
 #include "Game/Objects/FbxObject.h"
 
-#include "Game/UI/HudPresenter.h"
-
 #include <Windows.h>
 #include <algorithm>
 #include <cmath>
@@ -186,15 +184,6 @@ void SceneGame::Update()
 	//========================================
 	if (shouldUpdateGame)
 	{
-		// Systemを実行する
-		if (IsKeyTrigger('T'))
-		{
-			m_stopAll.Stop(m_objects);
-		}
-
-
-
-
 		// 全GameObjectのコンポーネントを更新
 		for (auto& pObject : m_objects)
 		{

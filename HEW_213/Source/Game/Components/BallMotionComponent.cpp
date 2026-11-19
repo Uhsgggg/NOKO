@@ -7,17 +7,18 @@
 
 using namespace std;
 
-//‘¬“x‚ÍXZ•½–Ê‚Ì‚İBClone‚É‚Íİ’è‚Ì‚İƒRƒs[‚·‚é
+//é€Ÿåº¦ã¯XZå¹³é¢ã®ã¿ã€‚Cloneæ™‚ã«ã¯è¨­å®šã®ã¿ã‚³ãƒ”ãƒ¼ã™ã‚‹
 BallMotionComponent::BallMotionComponent(GameObject* pOwner) : Component(pOwner)
 {
 }
 
 void BallMotionComponent::Configure(float deceleration, float stopSpeed, float maxSpeed)
 {
-	//İ’è‚ªŠÔˆá‚Á‚Ä‚¢‚½‚ç¡‚Ìİ’è‚ğc‚·
-	if (!isfinite(deceleration) ||
-		!isfinite(stopSpeed) ||
-		!isfinite(maxSpeed)) return;
+	//è¨­å®šãŒé–“é•ã£ã¦ã„ãŸã‚‰ä»Šã®è¨­å®šã‚’æ®‹ã™
+	if (!std::isfinite(deceleration) ||
+		!std::isfinite(stopSpeed) ||
+		!std::isfinite(maxSpeed))
+		return;
 
 	if (deceleration <= 0 ||
 		stopSpeed < 0 ||
@@ -76,26 +77,26 @@ float BallMotionComponent::GetMaxSpeed() const
 	return m_maxSpeed;
 }
 
-// 1.ˆÊ’u‚ğŒˆ‚ß‚é ¨ 2.‘¬‚³‚¾‚¯‚ğ¬‚³‚­‚·‚é ¨ 3.’â~”»’è
+// 1.ä½ç½®ã‚’æ±ºã‚ã‚‹ â†’ 2.é€Ÿã•ã ã‘ã‚’å°ã•ãã™ã‚‹ â†’ 3.åœæ­¢åˆ¤å®š
 void BallMotionComponent::Update(float dt)
 {
-	if (!m_pOwner ||
-		!IsMoving() ||
+	if (!m_pOwner || !IsMoving() ||
 		!isfinite(dt) ||
-		dt <= 0          ) return;
+		dt <= 0) return;
 
 	Transform& t = m_pOwner->GetTransform();
 	t.position[0] += m_velocity.x * dt;
 	t.position[2] += m_velocity.z * dt;
 
-	float Speed = sqrt(m_velocity.x * m_velocity.x + m_velocity.z * m_velocity.z);
+	float Speed = std::sqrt(
+		m_velocity.x * m_velocity.x + m_velocity.z * m_velocity.z);
 	float nextSpeed = Speed - m_deceleration * dt;
 	if (nextSpeed <= m_stopSpeed)
 	{
 		Stop();
 		return;
 	}
-	//Œü‚«‚ğ•Ï‚¦‚¸‚É‘¬‚³‚¾‚¯Œ¸‚ç‚·
+	//å‘ãã‚’å¤‰ãˆãšã«é€Ÿã•ã ã‘æ¸›ã‚‰ã™
 	m_velocity.x = m_velocity.x / Speed * nextSpeed;
 	m_velocity.z = m_velocity.z / Speed * nextSpeed;
 }

@@ -13,7 +13,7 @@ public:
 		return "Health";
 	}
 
-	const char* GetTypeId() const override
+	const char* GetTypeName() const override
 	{
 		return "Health";
 	}

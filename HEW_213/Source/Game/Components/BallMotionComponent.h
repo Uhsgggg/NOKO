@@ -2,12 +2,12 @@
 
 #include "Engine/Scene/Component.h"
 #include "Game/Systems/GameTypes.h"
-
+//
 class BallMotionComponent : public Component
 {
 public:
 	explicit BallMotionComponent(GameObject* owner);
-
+	
 	const char* GetTypeId() const override
 	{
 		return "BallMotion";
