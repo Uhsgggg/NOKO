@@ -17,8 +17,7 @@ bool TurnSystem::CanLaunch() const
 
 bool TurnSystem::TryConsumeShot()
 {
-	if (!CanLaunch())
-		return false;
+	if (!CanLaunch()) return false;
 	--m_remaining;
 	m_resolving = true;
 	return true;
@@ -26,12 +25,9 @@ bool TurnSystem::TryConsumeShot()
 
 bool TurnSystem::EndIfStopped(bool anyMoving)
 {
-	if (!m_resolving || anyMoving)
-	{
-		return false;
-		m_resolving = false;
-		return true;
-	}
+	if (!m_resolving || anyMoving) return false;
+	m_resolving = false;
+	return true;
 }
 
 int TurnSystem::GetRemainingShots() const
