@@ -66,49 +66,49 @@ ComponentRegistry::GetEntries()
 				);
 			},
 
-		// 保存
-		[](const Component& base, json& data)
-		{
-			// 今回の場合、
-			// 〇dynamic_cast … 実際に指定した派生型へ
-			// 　　　　　　　　　変換できるか確認する。
-			// ✕static_cast  … 基底クラスからの変換では、
-			// 　　　　　　　　　実際の派生型を実行時に確認しない。
-			// これは登録ミスによって別のComponentが渡された場合、
-			// 安全に失敗するとは限らないため。
-			const auto& c =
-				dynamic_cast<const AutoRotateComponent&>(base);
+			// 保存
+			[](const Component& base, json& data)
+			{
+				// 今回の場合、
+				// 〇dynamic_cast … 実際に指定した派生型へ
+				// 　　　　　　　　　変換できるか確認する。
+				// ✕static_cast  … 基底クラスからの変換では、
+				// 　　　　　　　　　実際の派生型を実行時に確認しない。
+				// これは登録ミスによって別のComponentが渡された場合、
+				// 安全に失敗するとは限らないため。
+				const auto& c =
+					dynamic_cast<const AutoRotateComponent&>(base);
 
-			const float* speed = c.GetRotationSpeed();
+				const float* speed = c.GetRotationSpeed();
 
-			data["speed"] = {
-				speed[0],
-				speed[1],
-				speed[2]
-			};
+				data["speed"] = {
+					speed[0],
+					speed[1],
+					speed[2]
+				};
+			},
+
+			// 読み込み
+			[](Component& base, const json& data)
+			{
+				float speed[3];
+
+				ReadVector3(
+					data.at("speed"),
+					speed,
+					"speed"
+				);
+
+				auto& c =
+					dynamic_cast<AutoRotateComponent&>(base);
+
+				c.SetRotationSpeed(
+					speed[0],
+					speed[1],
+					speed[2]
+				);
+			}
 		},
-
-		// 読み込み
-		[](Component& base, const json& data)
-		{
-			float speed[3];
-
-			ReadVector3(
-				data.at("speed"),
-				speed,
-				"speed"
-			);
-
-			auto& c =
-				dynamic_cast<AutoRotateComponent&>(base);
-
-			c.SetRotationSpeed(
-				speed[0],
-				speed[1],
-				speed[2]
-			);
-		}
-	},
 
 		//========================================
 		// Move
@@ -130,42 +130,42 @@ ComponentRegistry::GetEntries()
 				);
 			},
 
-		// 保存
-		[](const Component& base, json& data)
-		{
-			const auto& c =
-				dynamic_cast<const MoveComponent&>(base);
+			// 保存
+			[](const Component& base, json& data)
+			{
+				const auto& c =
+					dynamic_cast<const MoveComponent&>(base);
 
-			const float* velocity = c.GetVelocity();
+				const float* velocity = c.GetVelocity();
 
-			data["velocity"] = {
-				velocity[0],
-				velocity[1],
-				velocity[2]
-			};
+				data["velocity"] = {
+					velocity[0],
+					velocity[1],
+					velocity[2]
+				};
+			},
+
+			// 読み込み
+			[](Component& base, const json& data)
+			{
+				float velocity[3];
+
+				ReadVector3(
+					data.at("velocity"),
+					velocity,
+					"velocity"
+				);
+
+				auto& c =
+					dynamic_cast<MoveComponent&>(base);
+
+				c.SetVelocity(
+					velocity[0],
+					velocity[1],
+					velocity[2]
+				);
+			}
 		},
-
-		// 読み込み
-		[](Component& base, const json& data)
-		{
-			float velocity[3];
-
-			ReadVector3(
-				data.at("velocity"),
-				velocity,
-				"velocity"
-			);
-
-			auto& c =
-				dynamic_cast<MoveComponent&>(base);
-
-			c.SetVelocity(
-				velocity[0],
-				velocity[1],
-				velocity[2]
-			);
-		}
-	},
 
 		//========================================
 		// BallMotion
@@ -180,30 +180,30 @@ ComponentRegistry::GetEntries()
 				return make_unique<BallMotionComponent>(pOwner);
 			},
 
-		// 保存
-		[](const Component& base, json& data)
-		{
-			const auto& c =
-				dynamic_cast<const BallMotionComponent&>(base);
+			// 保存
+			[](const Component& base, json& data)
+			{
+				const auto& c =
+					dynamic_cast<const BallMotionComponent&>(base);
 
-			data["deceleration"] = c.GetDeceleration();
-			data["stopSpeed"] = c.GetStopSpeed();
-			data["maxSpeed"] = c.GetMaxSpeed();
+				data["deceleration"] = c.GetDeceleration();
+				data["stopSpeed"] = c.GetStopSpeed();
+				data["maxSpeed"] = c.GetMaxSpeed();
+			},
+
+			// 読み込み
+			[](Component& base, const json& data)
+			{
+				auto& c =
+					dynamic_cast<BallMotionComponent&>(base);
+
+				c.Configure(
+					data.at("deceleration").get<float>(),
+					data.at("stopSpeed").get<float>(),
+					data.at("maxSpeed").get<float>()
+				);
+			}
 		},
-
-		// 読み込み
-		[](Component& base, const json& data)
-		{
-			auto& c =
-				dynamic_cast<BallMotionComponent&>(base);
-
-			c.Configure(
-				data.at("deceleration").get<float>(),
-				data.at("stopSpeed").get<float>(),
-				data.at("maxSpeed").get<float>()
-			);
-		}
-	},
 
 		//========================================
 		// PlayerLaunch
@@ -241,10 +241,116 @@ ComponentRegistry::GetEntries()
 					data.at("maxSpeed").get<float>()
 				);
 			}
+		},
+
+		//========================================
+		// ReflectionCounter
+		//========================================
+		{
+			"ReflectionCounter",
+			"Reflection Counter",
+
+			// 生成
+			[](GameObject* pOwner)->unique_ptr<Component>
+			{
+				return make_unique<ReflectionCounterComponent>(pOwner);
+			},
+
+			// 保存
+			[](const Component& base, json& data)
+			{
+				(void)base;
+				(void)data;
+			},
+
+			// 読み込み
+			[](Component& base, const json& data)
+			{
+				(void)base;
+				(void)data;
+			}
+		},
+
+		//========================================
+		// Health
+		//========================================
+		{
+			"Health",
+			"Health",
+
+			// 生成
+			[](GameObject* pOwner)->unique_ptr<Component>
+			{
+				return make_unique<HealthComponent>(pOwner);
+			},
+
+			// 保存
+			[](const Component& base, json& data)
+			{
+				const auto& c =
+					dynamic_cast<const HealthComponent&>(base);
+
+				data["maxHP"] = c.GetMaxHP();
+			},
+
+			// 読み込み
+			[](Component& base, const json& data)
+			{
+				auto& c =
+					dynamic_cast<HealthComponent&>(base);
+
+				c.Reset(data.at("maxHP").get<int>());
+			}
+		},
+
+		//========================================
+		// Collider
+		//========================================
+		{
+			"Collider",
+			"Collider",
+
+			// 生成
+			[](GameObject* pOwner)->unique_ptr<Component>
+			{
+				return make_unique<ColliderComponent>(pOwner);
+			},
+
+			// 保存
+			[](const Component& base, json& data)
+			{
+				const auto& c =
+					dynamic_cast<const ColliderComponent&>(base);
+
+				const auto& v = c.GetConfig();
+				data["role"] = int(v.role);
+				data["shape"] = int(v.shape);
+				data["shape"] = v.radius;
+				data["halfExtent"] = {v.halfExtent.x, v.halfExtent.z};
+				data["restitution"] = v.restitution;
+			},
+
+			// 読み込み
+			[](Component& base, const json& data)
+			{
+				auto& c =
+					dynamic_cast<ColliderComponent&>(base);
+
+				ColliderConfig v;
+				v.role = GameRole(data.at("role").get<int>());
+				v.shape = ColliderShape(data.at("shape").get<int>());
+				v.radius = data.at("radius").get<float>();
+				const auto& h = data.at("halfExtent");
+				if (!h.is_array() || h.size() != 2)
+				{
+					throw runtime_error("Invalid halfExtent");
+				}
+				v.halfExtent = { h.at(0).get<float>(), h.at(1).get<float>() };
+				v.restitution = data.at("restitution").get<float>();
+				c.Configure(v);
+			}
 		}
 	};
-
-	//=============================================1411行目から
 
 	return entries;
 }

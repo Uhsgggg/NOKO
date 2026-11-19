@@ -29,7 +29,7 @@ namespace
 {
 	// ステージの保存先
 	const char* const kStageFilePath =
-		"Assets/Stages/StageProto.json";
+		"Assets/Stages/Stage01.json";
 
 	// プロトタイプの仮仕様。企画確定後に変更するところ
 	constexpr int kShots = 10;
@@ -130,7 +130,7 @@ void SceneGame::ResetGamePlay()
 	}
 	if (!m_gameReady)
 	{
-		MessageBoxA(nullptr, "Player components missing. Check StageProto.json", "Game Setup", MB_OK | MB_ICONERROR);
+		MessageBoxA(nullptr, "Player components missing. Check Stage01.json", "Game Setup", MB_OK | MB_ICONERROR);
 	}
 
 	UpdateHUD();

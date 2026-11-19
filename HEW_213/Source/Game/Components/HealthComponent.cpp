@@ -11,16 +11,22 @@ HealthComponent::HealthComponent(GameObject* pOwner) : Component(pOwner)
 void HealthComponent::Reset(int maxHP)
 {
 	if (maxHP < 1)
+	{
 		maxHP = 1;
+	}
 	m_maxHP = maxHP;
 	m_hp = maxHP;
 }
 int HealthComponent::ApplyDamage(int amount)
 {
-	if (amount <= 0 || m_hp == 0)
-		return 0;
+	if (amount <= 0 || m_hp == 0) return 0;
+
 	if (amount > m_hp)
+	{
 		amount = m_hp;
+	}
+	m_hp -= amount;
+	return amount;
 }
 int HealthComponent::GetHP() const
 {

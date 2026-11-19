@@ -5,6 +5,8 @@
 #include "imgui.h"
 #endif
 
+using namespace std;
+
 //速度はXZ平面のみ。Clone時には設定のみコピーする
 BallMotionComponent::BallMotionComponent(GameObject* pOwner) : Component(pOwner)
 {
@@ -13,9 +15,9 @@ BallMotionComponent::BallMotionComponent(GameObject* pOwner) : Component(pOwner)
 void BallMotionComponent::Configure(float deceleration, float stopSpeed, float maxSpeed)
 {
 	//設定が間違っていたら今の設定を残す
-	if (!std::isfinite(deceleration) ||
-		!std::isfinite(stopSpeed) ||
-		!std::isfinite(maxSpeed))
+	if (!isfinite(deceleration) ||
+		!isfinite(stopSpeed) ||
+		!isfinite(maxSpeed))
 		return;
 
 	if (deceleration <= 0 ||
@@ -30,8 +32,8 @@ void BallMotionComponent::Configure(float deceleration, float stopSpeed, float m
 
 void BallMotionComponent::SetVelocity(BoardVec2 v)
 {
-	float speed = std::sqrt(v.x * v.x + v.z * v.z);
-	if (!std::isfinite(speed)) return;
+	float speed = sqrt(v.x * v.x + v.z * v.z);
+	if (!isfinite(speed)) return;
 	if (speed <= m_stopSpeed)
 	{
 		Stop();
@@ -79,14 +81,14 @@ float BallMotionComponent::GetMaxSpeed() const
 void BallMotionComponent::Update(float dt)
 {
 	if (!m_pOwner || !IsMoving() ||
-		!std::isfinite(dt) ||
+		!isfinite(dt) ||
 		dt <= 0) return;
 
 	Transform& t = m_pOwner->GetTransform();
 	t.position[0] += m_velocity.x * dt;
 	t.position[2] += m_velocity.z * dt;
 
-	float Speed = std::sqrt(
+	float Speed = sqrt(
 		m_velocity.x * m_velocity.x + m_velocity.z * m_velocity.z);
 	float nextSpeed = Speed - m_deceleration * dt;
 	if (nextSpeed <= m_stopSpeed)
@@ -99,9 +101,9 @@ void BallMotionComponent::Update(float dt)
 	m_velocity.z = m_velocity.z / Speed * nextSpeed;
 }
 
-std::unique_ptr<Component> BallMotionComponent::Clone(GameObject* pNewOwner) const
+unique_ptr<Component> BallMotionComponent::Clone(GameObject* pNewOwner) const
 {
-	auto pCopy = std::make_unique<BallMotionComponent>(pNewOwner);
+	auto pCopy = make_unique<BallMotionComponent>(pNewOwner);
 	pCopy->Configure(m_deceleration, m_stopSpeed, m_maxSpeed);
 	pCopy->SetEnabled(IsEnabled());
 	return pCopy;
