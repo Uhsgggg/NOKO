@@ -66,49 +66,49 @@ ComponentRegistry::GetEntries()
 				);
 			},
 
-			// 保存
-			[](const Component& base, json& data)
-			{
-				// 今回の場合、
-				// 〇dynamic_cast … 実際に指定した派生型へ
-				// 　　　　　　　　　変換できるか確認する。
-				// ✕static_cast  … 基底クラスからの変換では、
-				// 　　　　　　　　　実際の派生型を実行時に確認しない。
-				// これは登録ミスによって別のComponentが渡された場合、
-				// 安全に失敗するとは限らないため。
-				const auto& c =
-					dynamic_cast<const AutoRotateComponent&>(base);
+		// 保存
+		[](const Component& base, json& data)
+		{
+			// 今回の場合、
+			// 〇dynamic_cast … 実際に指定した派生型へ
+			// 　　　　　　　　　変換できるか確認する。
+			// ✕static_cast  … 基底クラスからの変換では、
+			// 　　　　　　　　　実際の派生型を実行時に確認しない。
+			// これは登録ミスによって別のComponentが渡された場合、
+			// 安全に失敗するとは限らないため。
+			const auto& c =
+				dynamic_cast<const AutoRotateComponent&>(base);
 
-				const float* speed = c.GetRotationSpeed();
+			const float* speed = c.GetRotationSpeed();
 
-				data["speed"] = {
-					speed[0],
-					speed[1],
-					speed[2]
-				};
-			},
-
-			// 読み込み
-			[](Component& base, const json& data)
-			{
-				float speed[3];
-
-				ReadVector3(
-					data.at("speed"),
-					speed,
-					"speed"
-				);
-
-				auto& c =
-					dynamic_cast<AutoRotateComponent&>(base);
-
-				c.SetRotationSpeed(
-					speed[0],
-					speed[1],
-					speed[2]
-				);
-			}
+			data["speed"] = {
+				speed[0],
+				speed[1],
+				speed[2]
+			};
 		},
+
+		// 読み込み
+		[](Component& base, const json& data)
+		{
+			float speed[3];
+
+			ReadVector3(
+				data.at("speed"),
+				speed,
+				"speed"
+			);
+
+			auto& c =
+				dynamic_cast<AutoRotateComponent&>(base);
+
+			c.SetRotationSpeed(
+				speed[0],
+				speed[1],
+				speed[2]
+			);
+		}
+	},
 
 		//========================================
 		// Move
@@ -130,45 +130,121 @@ ComponentRegistry::GetEntries()
 				);
 			},
 
+		// 保存
+		[](const Component& base, json& data)
+		{
+			const auto& c =
+				dynamic_cast<const MoveComponent&>(base);
+
+			const float* velocity = c.GetVelocity();
+
+			data["velocity"] = {
+				velocity[0],
+				velocity[1],
+				velocity[2]
+			};
+		},
+
+		// 読み込み
+		[](Component& base, const json& data)
+		{
+			float velocity[3];
+
+			ReadVector3(
+				data.at("velocity"),
+				velocity,
+				"velocity"
+			);
+
+			auto& c =
+				dynamic_cast<MoveComponent&>(base);
+
+			c.SetVelocity(
+				velocity[0],
+				velocity[1],
+				velocity[2]
+			);
+		}
+	},
+
+		//========================================
+		// BallMotion
+		//========================================
+		{
+			"BallMotion",
+			"Ball Motion",
+
+			// 生成
+			[](GameObject* pOwner)->unique_ptr<Component>
+			{
+				return make_unique<BallMotionComponent>(pOwner);
+			},
+
+		// 保存
+		[](const Component& base, json& data)
+		{
+			const auto& c =
+				dynamic_cast<const BallMotionComponent&>(base);
+
+			data["deceleration"] = c.GetDeceleration();
+			data["stopSpeed"] = c.GetStopSpeed();
+			data["maxSpeed"] = c.GetMaxSpeed();
+		},
+
+		// 読み込み
+		[](Component& base, const json& data)
+		{
+			auto& c =
+				dynamic_cast<BallMotionComponent&>(base);
+
+			c.Configure(
+				data.at("deceleration").get<float>(),
+				data.at("stopSpeed").get<float>(),
+				data.at("maxSpeed").get<float>()
+			);
+		}
+	},
+
+		//========================================
+		// PlayerLaunch
+		//========================================
+		{
+			"PlayerLaunch",
+			"Player Launch",
+
+			// 生成
+			[](GameObject* pOwner)->unique_ptr<Component>
+			{
+				return make_unique<PlayerLaunchComponent>(pOwner);
+			},
+
 			// 保存
 			[](const Component& base, json& data)
 			{
 				const auto& c =
-					dynamic_cast<const MoveComponent&>(base);
+					dynamic_cast<const PlayerLaunchComponent&>(base);
 
-				const float* velocity = c.GetVelocity();
-
-				data["velocity"] = {
-					velocity[0],
-					velocity[1],
-					velocity[2]
-				};
+				data["minDrag"] = c.GetMinDrag();
+				data["maxDrag"] = c.GetMaxDrag();
+				data["maxSpeed"] = c.GetMaxSpeed();
 			},
 
 			// 読み込み
 			[](Component& base, const json& data)
 			{
-				float velocity[3];
-
-				ReadVector3(
-					data.at("velocity"),
-					velocity,
-					"velocity"
-				);
-
 				auto& c =
-					dynamic_cast<MoveComponent&>(base);
+					dynamic_cast<PlayerLaunchComponent&>(base);
 
-				c.SetVelocity(
-					velocity[0],
-					velocity[1],
-					velocity[2]
+				c.Configure(
+					data.at("minDrag").get<float>(),
+					data.at("maxDrag").get<float>(),
+					data.at("maxSpeed").get<float>()
 				);
 			}
 		}
 	};
 
-	// ここから先は1335行目から
+	//=============================================1411行目から
 
 	return entries;
 }

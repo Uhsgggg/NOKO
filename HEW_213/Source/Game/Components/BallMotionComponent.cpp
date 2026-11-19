@@ -13,11 +13,14 @@ BallMotionComponent::BallMotionComponent(GameObject* pOwner) : Component(pOwner)
 void BallMotionComponent::Configure(float deceleration, float stopSpeed, float maxSpeed)
 {
 	//ê›íËÇ™ä‘à·Ç¡ÇƒÇ¢ÇΩÇÁç°ÇÃê›íËÇécÇ∑
-	if (!std::isfinite(deceleration) || !std::isfinite(stopSpeed) || !std::isfinite(maxSpeed))
+	if (!std::isfinite(deceleration) ||
+		!std::isfinite(stopSpeed) ||
+		!std::isfinite(maxSpeed))
 		return;
 
-	if (deceleration <= 0 || stopSpeed < 0 || maxSpeed <= stopSpeed)
-		return;
+	if (deceleration <= 0 ||
+		stopSpeed < 0 ||
+		maxSpeed <= stopSpeed) return;
 
 	m_deceleration = deceleration;
 	m_stopSpeed    = stopSpeed;
@@ -28,8 +31,7 @@ void BallMotionComponent::Configure(float deceleration, float stopSpeed, float m
 void BallMotionComponent::SetVelocity(BoardVec2 v)
 {
 	float speed = std::sqrt(v.x * v.x + v.z * v.z);
-	if (!std::isfinite(speed))
-		return;
+	if (!std::isfinite(speed)) return;
 	if (speed <= m_stopSpeed)
 	{
 		Stop();
@@ -76,14 +78,16 @@ float BallMotionComponent::GetMaxSpeed() const
 // 1.à íuÇåàÇﬂÇÈ Å® 2.ë¨Ç≥ÇæÇØÇè¨Ç≥Ç≠Ç∑ÇÈ Å® 3.í‚é~îªíË
 void BallMotionComponent::Update(float dt)
 {
-	if (!m_pOwner || !IsMoving() || !std::isfinite(dt) || dt <= 0)
-		return;
+	if (!m_pOwner || !IsMoving() ||
+		!std::isfinite(dt) ||
+		dt <= 0) return;
 
 	Transform& t = m_pOwner->GetTransform();
 	t.position[0] += m_velocity.x * dt;
 	t.position[2] += m_velocity.z * dt;
 
-	float Speed = std::sqrt(m_velocity.x * m_velocity.x + m_velocity.z * m_velocity.z);
+	float Speed = std::sqrt(
+		m_velocity.x * m_velocity.x + m_velocity.z * m_velocity.z);
 	float nextSpeed = Speed - m_deceleration * dt;
 	if (nextSpeed <= m_stopSpeed)
 	{

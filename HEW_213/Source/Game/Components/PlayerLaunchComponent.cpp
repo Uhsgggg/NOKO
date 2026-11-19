@@ -11,8 +11,9 @@ PlayerLaunchComponent::PlayerLaunchComponent(GameObject* pOwner) : Component(pOw
 
 void PlayerLaunchComponent::Configure(float minDrag, float maxDrag, float maxSpeed)
 {
-	if (!std::isfinite(minDrag) || !std::isfinite(maxDrag) || !std::isfinite(maxSpeed))
-		return;
+	if (!std::isfinite(minDrag) ||
+		!std::isfinite(maxDrag) ||
+		!std::isfinite(maxSpeed)) return;
 	m_minDrag  = minDrag;
 	m_maxDrag  = maxDrag;
 	m_maxSpeed = maxSpeed;
@@ -22,20 +23,22 @@ void PlayerLaunchComponent::Configure(float minDrag, float maxDrag, float maxSpe
 bool PlayerLaunchComponent::TryBuildVelocity(const AimState& aim, BoardVec2& out) const
 {
 	out = {};
-	if (!aim.released)
-		return false;
+
+	if (!aim.released) return false;
 
 	float x = aim.anchor.x - aim.point.x;
 	float z = aim.anchor.z - aim.point.z;
 	float length = std::sqrt(x * x + z * z);
-	if (!std::isfinite(length) || length <= 0 || length < m_minDrag)
-		return false;
+	if (!std::isfinite(length) ||
+		length <= 0 ||
+		length < m_minDrag) return false;
 
 	float speed = length / m_maxDrag * m_maxSpeed;
 	if (speed > m_maxSpeed)
 		speed = m_maxSpeed;
 	out.x = x / length * speed;
 	out.z = z / length * speed;
+
 	return true;
 }
 

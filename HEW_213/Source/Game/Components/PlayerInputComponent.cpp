@@ -1,5 +1,6 @@
 #include "PlayerInputComponent.h"
 #include "Engine/Scene/GameObject.h"
+
 #ifdef _DEBUG
 #include "imgui.h"
 #endif
@@ -27,8 +28,7 @@ void PlayerInputComponent::Sample(const PointerFrame& frame, bool canAim)
 		m_aim.point = frame.point;
 	}
 
-	if (!m_aim.dragging)
-		return;
+	if (!m_aim.dragging) return;
 
 	m_aim.point = frame.point;
 	if (frame.released)
@@ -37,7 +37,9 @@ void PlayerInputComponent::Sample(const PointerFrame& frame, bool canAim)
 		m_aim.released = true;
 	}
 	else if (!frame.held)
-	Cancel();
+	{
+		Cancel();
+	}
 }
 
 AimState PlayerInputComponent::GetAim() const
