@@ -6,7 +6,7 @@
 class PlayerInputComponent : public Component
 {
 public:
-	explicit PlayerInputComponent(GameObject* owner);
+	explicit PlayerInputComponent(GameObject* pOwner);
 
 	const char* GetTypeId() const override
 	{

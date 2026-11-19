@@ -276,6 +276,12 @@
     <ClCompile Include="Source\Game\Components\BallMotionComponent.cpp">
       <Filter>ソース ファイル\Game\Components</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Components\PlayerInputComponent.cpp">
+      <Filter>ソース ファイル\Game\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Components\PlayerLaunchComponent.cpp">
+      <Filter>ソース ファイル\Game\Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\App\Defines.h">
