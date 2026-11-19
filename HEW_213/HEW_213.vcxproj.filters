@@ -291,6 +291,9 @@
     <ClCompile Include="Source\Game\Components\PlayerLaunchComponent.cpp">
       <Filter>ソース ファイル\Game\Components</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Components\HealthComponent.cpp">
+      <Filter>ソース ファイル\Game\Component</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\App\Defines.h">
