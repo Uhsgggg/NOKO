@@ -2,6 +2,7 @@
 
 #include "Defines.h"
 #include "Main.h"
+#include "Game/Input/BoardPointer.h"
 
 #include <stdio.h>
 #include <crtdbg.h>
@@ -71,6 +72,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		HWND_DESKTOP,
 		NULL, hInstance, NULL
 	);
+
+	// RawInputでマウスの移動量を受け取る
+	// (Debug/Release共通)
+	if (!BoardPointer::RegisterMouse(hWnd))
+	{
+		MessageBoxA(hWnd, "Raw mouse registration failed.", "Input Error", MB_OK | MB_ICONERROR);
+		if (hWnd) DestroyWindow(hWnd);
+		UnregisterClass(wcex.lpszClassName, hInstance);
+		return 0;
+	}
 
 	// ウィンドウの表示
 	ShowWindow(hWnd, nCmdShow);

@@ -7,14 +7,14 @@
 
 using namespace std;
 
-//‘¬“x‚ÍXZ•½–Ê‚Ì‚İBClone‚É‚Íİ’è‚Ì‚İƒRƒs[‚·‚é
+//é€Ÿåº¦ã¯XZå¹³é¢ã®ã¿ã€‚Cloneæ™‚ã«ã¯è¨­å®šã®ã¿ã‚³ãƒ”ãƒ¼ã™ã‚‹
 BallMotionComponent::BallMotionComponent(GameObject* pOwner) : Component(pOwner)
 {
 }
 
 void BallMotionComponent::Configure(float deceleration, float stopSpeed, float maxSpeed)
 {
-	//İ’è‚ªŠÔˆá‚Á‚Ä‚¢‚½‚ç¡‚Ìİ’è‚ğc‚·
+	//è¨­å®šãŒé–“é•ã£ã¦ã„ãŸã‚‰ä»Šã®è¨­å®šã‚’æ®‹ã™
 	if (!isfinite(deceleration) ||
 		!isfinite(stopSpeed) ||
 		!isfinite(maxSpeed))
@@ -78,7 +78,7 @@ float BallMotionComponent::GetMaxSpeed() const
 	return m_maxSpeed;
 }
 
-// 1.ˆÊ’u‚ğŒˆ‚ß‚é ¨ 2.‘¬‚³‚¾‚¯‚ğ¬‚³‚­‚·‚é ¨ 3.’â~”»’è
+// 1.ä½ç½®ã‚’æ±ºã‚ã‚‹ â†’ 2.é€Ÿã•ã ã‘ã‚’å°ã•ãã™ã‚‹ â†’ 3.åœæ­¢åˆ¤å®š
 void BallMotionComponent::Update(float dt)
 {
 	if (!m_pOwner || !IsMoving() ||
@@ -97,7 +97,7 @@ void BallMotionComponent::Update(float dt)
 		Stop();
 		return;
 	}
-	//Œü‚«‚ğ•Ï‚¦‚¸‚É‘¬‚³‚¾‚¯Œ¸‚ç‚·
+	//å‘ãã‚’å¤‰ãˆãšã«é€Ÿã•ã ã‘æ¸›ã‚‰ã™
 	m_velocity.x = m_velocity.x / Speed * nextSpeed;
 	m_velocity.z = m_velocity.z / Speed * nextSpeed;
 }

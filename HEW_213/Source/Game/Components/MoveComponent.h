@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Engine/Scene/Component.h"
-
+//
 class MoveComponent : public Component
 {
 public:
