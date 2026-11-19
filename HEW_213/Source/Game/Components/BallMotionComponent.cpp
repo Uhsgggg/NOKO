@@ -15,14 +15,15 @@ BallMotionComponent::BallMotionComponent(GameObject* pOwner) : Component(pOwner)
 void BallMotionComponent::Configure(float deceleration, float stopSpeed, float maxSpeed)
 {
 	//設定が間違っていたら今の設定を残す
-	if (!std::isfinite(deceleration) ||
-		!std::isfinite(stopSpeed) ||
-		!std::isfinite(maxSpeed))
+	if (!isfinite(deceleration) ||
+		!isfinite(stopSpeed) ||
+		!isfinite(maxSpeed))
 		return;
 
 	if (deceleration <= 0 ||
 		stopSpeed < 0 ||
-		maxSpeed <= stopSpeed) return;
+		maxSpeed <= stopSpeed)
+		return;
 
 	m_deceleration = deceleration;
 	m_stopSpeed    = stopSpeed;
@@ -88,7 +89,7 @@ void BallMotionComponent::Update(float dt)
 	t.position[0] += m_velocity.x * dt;
 	t.position[2] += m_velocity.z * dt;
 
-	float Speed = std::sqrt(
+	float Speed = sqrt(
 		m_velocity.x * m_velocity.x + m_velocity.z * m_velocity.z);
 	float nextSpeed = Speed - m_deceleration * dt;
 	if (nextSpeed <= m_stopSpeed)
