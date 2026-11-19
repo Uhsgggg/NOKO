@@ -236,6 +236,7 @@ copy /Y "$(ProjectDir)External\Assimp\bin\assimp-vc143-mt.dll" "$(TargetDir)assi
     <ClCompile Include="Source\Game\Objects\PrimitiveObject.cpp" />
     <ClCompile Include="Source\Game\Scenes\SceneGame.cpp" />
     <ClCompile Include="Source\Game\Serialization\SceneSerializer.cpp" />
+    <ClCompile Include="Source\Game\Systems\DamageFormula.cpp" />
     <ClCompile Include="Source\Game\Systems\StopAllSystem.cpp" />
     <ClCompile Include="Source\Game\Systems\TurnSystem.cpp" />
     <ClCompile Include="Source\Game\UI\HudPresenter.cpp" />
@@ -327,7 +328,7 @@ copy /Y "$(ProjectDir)External\Assimp\bin\assimp-vc143-mt.dll" "$(TargetDir)assi
     <ClInclude Include="Source\Game\Scenes\SceneGame.h" />
     <ClInclude Include="Source\Game\Serialization\SceneSerializer.h" />
     <ClInclude Include="Source\Game\Systems\CollisionSystem.h" />
-    <ClInclude Include="Source\Game\Systems\DamageFomula.h" />
+    <ClInclude Include="Source\Game\Systems\DamageFormula.h" />
     <ClInclude Include="Source\Game\Systems\GameTypes.h" />
     <ClInclude Include="Source\Game\Systems\StopAllSystem.h" />
     <ClInclude Include="Source\Game\Systems\TurnSystem.h" />
