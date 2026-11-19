@@ -3,10 +3,8 @@
 
 static float LimitRation(float ratio)
 {
-	if (!std::isfinite(ratio) || ratio < 0)
-		return 0;
-	if (ratio > 1)
-		return 1;
+	if (!std::isfinite(ratio) || ratio < 0) return 0;
+	if (ratio > 1) return 1;
 	return ratio;
 }
 
@@ -32,11 +30,18 @@ HudView HudPresenter::Build(const HudInput& input, float maxDrag)
 		view.enemyRatios.push_back(ratio);
 		HudColor color;
 		if (ratio > 0.5f)
-			color = { 0,1,0,1 }; //óŒ
+		{
+			color = { 0,1,0,1 }; // óŒ
+		}
 		else if (ratio > 0.25f)
-			color = { 1,1,0,1 }; //â©
+		{
+			color = { 1,1,0,1 }; // â©
+		}
 		else
-			color = { 1,0,0,1 }; //ê‘
+		{
+			color = { 1,0,0,1 }; // ê‘
+		}
+
 		view.enemyColors.push_back(color);
 	}
 
@@ -58,6 +63,6 @@ HudView HudPresenter::Build(const HudInput& input, float maxDrag)
 			view.showArrow = true;	
 		}
 	}
-	return view;
 
+	return view;
 }
