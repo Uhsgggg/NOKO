@@ -1,0 +1,148 @@
+# 00｜全員共通：簡略版の使い方
+
+プログラムは1年目のC++（変数、if、for、関数、クラス、構造体）中心。
+既存エンジン・Editorは学び直す必要なし。
+
+## 最新の操作仕様（全員確認）
+
+Play中、発射可能なときにゲーム画面の任意の位置で左ボタンを押し、
+動かして離す。プレイヤーのクリック判定は不要。
+画面端でカーソル座標が止まっても、相対マウス入力が届けば仮想座標は動き続ける。
+発射はドラッグと逆方向、最大速度は従来どおり。UI上では開始しないが、
+開始済みのドラッグはUI上やウィンドウ外に移動しても継続する（フォーカス喪失時は中断）。
+Edit Modeのオブジェクト選択は今までどおり。
+
+波多野はBoardPointer・Startup・SceneGameplay・SceneGame、
+栗本はPlayerInputComponentを変更。
+黒野は矢印の座標の意味を確認（コード変更なし）。
+小栗・遠藤の実装は変更なし。
+共通GameTypes.hとBoardPointer.hを先に共有し、全員リビルドする。
+
+## 作業する前に
+
+1. 公開関数を勝手に変えない。
+2. 自分の担当の資料を1章ずつ読む。h/cppの全文、長いcppは全ブロックを順に掲載。共通hが共有済みなら照合だけ行う。
+3. 資料だけを見ながらcppを作成する。穴埋めは練習用なので実装コードに追加しない。担当のhpp/cpp以外は一人で変更しない。
+4. 他の人のcppがなくてリンクできない場合は、担当コードの作成を先に進め、全体のビルドは統合後に行う。masterへそのまま上書きしない。
+5. Debug/x64でビルドし、完成条件を確認してPRを出す。
+
+## 誰が何を作る？
+
+|担当|担当ファイル|仕事|
+|---|---|---|
+|波多野|BoardPointer、SceneGameplay、Registry、HUD描画、Active|共通基盤と接続|
+|栗本|BallMotion、PlayerInput、PlayerLaunch、TurnSystem|操作・移動・手数|
+|小栗|Collider、ReflectionCounter、CollisionSystem|当たり判定・反射|
+|遠藤|Health、DamageFormula|HP・ダメージ|
+|黒野|HudPresenter|表示する数値・色・矢印を作る|
+
+## 共通データ（実物）
+
+`Source/Game/Systems/GameTypes.h`（ファイル全文）
+
+```cpp
+#pragma once
+#include <vector>
+#include <string>
+class GameObject;
+// XZ平面。zは画面YではなくワールドZ。
+struct BoardVec2
+{
+    float x = 0.0f;
+    float z = 0.0f;
+};
+enum class GameRole
+{
+    Player,
+    Enemy,
+    Boss,
+    Wall
+};
+enum class ColliderShape
+{
+    Sphere,
+    Box
+};
+struct ColliderConfig
+{
+    GameRole role = GameRole::Wall;
+    ColliderShape shape = ColliderShape::Box;
+    float radius = 0.5f;
+    BoardVec2 halfExtent = {0.5f, 0.5f};
+    float restitution = 1.0f;
+};
+struct PointerFrame
+{
+    bool valid = false; // フォーカス喪失などでfalse
+    bool pressed = false, held = false, released = false;
+    BoardVec2 point; // ドラッグ開始を(0,0)とする仮想XZ座標
+};
+struct AimState
+{
+    bool dragging = false, released = false;
+    BoardVec2 anchor, point; // 実際のプレイヤー座標ではない
+};
+struct Contact
+{
+    GameObject *a = nullptr; // 非所有・この物理ステップ内のみ
+    GameObject *b = nullptr;
+    BoardVec2 normal; // B→A、単位長
+    float penetration = 0.0f;
+};
+struct CollisionNotice
+{
+    GameObject *attacker = nullptr;
+    GameObject *target = nullptr;
+    int reflectionCount = 0; // 通知確定時の値
+};
+struct HudInput
+{
+    int remainingShots = 0, nextEnemyCount = 0;
+    int bossHP = 0, bossMaxHP = 0;
+    std::vector<float> enemyHPRatios; // SceneGameの当該フレームの敵順
+    AimState aim;
+    BoardVec2 playerPosition;
+};
+struct HudColor
+{
+    float r = 1, g = 1, b = 1, a = 1;
+};
+struct HudView
+{
+    std::string shotsText, nextEnemiesText;
+    float bossRatio = 0.0f;
+    std::vector<float> enemyRatios;
+    std::vector<HudColor> enemyColors; // 同じ敵順、描画はリード側
+    bool showArrow = false;
+    BoardVec2 arrowStart, arrowEnd;
+};
+```
+
+## データが流れる順番
+
+BoardPointer → PlayerInput → PlayerLaunch → 
+BallMotion → CollisionSystem → SceneGameplay →
+ Health → HudPresenter → HudRenderer。
+
+SceneGameplayはSceneGameクラスのゲーム部分だけを別cppに分けたもの。
+クラスを新しく継承する必要はない。BoardPointerは任意の場所で開始する相対ドラッグ版に更新。
+`PointerFrame.point` はカーソルの画面座標やプレイヤー位置ではなく、開始を(0,0)とする仮想XZ座標。
+Raw Inputでマウス移動量を積算する。`hitPlayer` は廃止。UIからは開始しない。
+
+## 用語
+
+- `Component`：1つの物体に付ける機能。
+- `System`：複数の物体・ゲーム全体を調べる普通のクラス。
+- `Clone`：編集用の物体を実行用に複製する。`pNewOwner` は新しい持ち主。
+- `nullptr`：指す相手がいない。`if (!p)` で確認する。
+- `GetComponent<T>()`：物体に付いている機能を取得。存在しない場合はnullptr。
+- `const`：値を変更しない約束。
+- `std::isfinite`：無限大や計算不能な値を見つける。意味だけ理解すればOK。
+- `#ifdef _DEBUG`：Debug時だけ含める。Inspectorなど既存基盤に必要な部分。担当者は完成例を利用する。
+
+## 簡略版の決定事項
+
+- すべての種類が衝突対象。以前のmask（ビットによる衝突相手変更）は未使用だったため削除。Sphere/Sphere、Sphere/Boxは対応、Box/Box不要。箱はX/Z軸に平行。
+- 球は同じ重さ、壁とボスは動かない。1フレーム4分割。高速ですり抜ける可能性あり。
+- HP色は緑・黄・赤の3段階。移動・発射の設定が不正なら前の設定を残す。HP最大値は最低1。
+- 旧コードの公開関数は大部分維持。`ColliderConfig::mask` のみ削除、CollisionSystem内部のペア記録型変更。描画ヘルパーと既存Editorはそのまま。

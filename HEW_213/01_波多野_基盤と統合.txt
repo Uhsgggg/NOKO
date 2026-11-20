@@ -1,0 +1,3326 @@
+# 01｜波多野：ゲーム基盤と統合
+
+## Debug当たり判定表示の補足
+
+この資料のBoardPointerとSceneGameは可視化追加後の全文です。SceneGameにDebug専用パネルと表示処理を追加し、BoardPointerではImGuiがマウスを使う時に新規ドラッグ開始を無効にします。開始済みのドラッグは継続します。`UpdateColliderDebug()` は1フレーム1回で、物理処理4分割の中では呼びません。追加コードを二重に記述しないでください。既に実装を始めている場合は `../09_ColliderDebug_実装授業.md` の差分手順を使ってください。
+
+
+
+**書き方のルール：この資料だけで担当コードを書き終えられます。**
+
+- 「ファイル全文」は、そのファイルを1つ完成させるコードです。共通hがすでにある場合は照合するだけで、二重に追記しません。
+- 「順番に追記」は、同じcppの末尾へ番号順に書くコードです。最初のブロックから最後まで書けば完成します。途中でファイルを閉じたり別のクラスを作ったりする必要はありません。
+- 「穴埋め練習」「模範解答」は理解確認用です。完成コードに追加しません。
+- 自分の担当以外の処理は、共通hの宣言を使います。他の担当のcppが未完成なら、全体のリンク／実行は全員の実装後に確認します。
+- Visual Studioで既存のファイルがあるか確認し、ない場合は指定された物理フォルダに新規作成してプロジェクトへ登録します。日本語コメント付きの新規ファイルはUTF-8 BOM付きで保存すると安全です。
+
+
+## 作業順
+
+この資料は、第19回簡略版の全ゲーム統合コードを順に用意するための手順です。
+既存Editorの再実装は不要です。最初に全員共通の00でGameTypes.hを確認し、
+担当者のhを共有してください。第1～3章は各担当のcppが未完成でも準備可能、
+第4章以降の統合ビルドは他の担当の実装後です。
+
+既存ファイルの全文は、前回の簡略版の正本です。
+自分の最新ブランチに独自変更がある場合は上書きせず、
+説明されている変更点を比較して取り込んでください。Editorの機能を削る目的ではありません。
+
+## 1. Active（GameObjectの既存機能に追加）
+
+GameObject.hではSetActive、IsActiveとm_activeを追加。GameObject.cppではUpdate冒頭で無効ならreturn、Clone時はactiveをtrueに戻します。既に第21回相当の実装がある場合は二重に書かないこと。
+
+`Source/Engine/Scene/GameObject.h`（ファイル全文・省略なし）
+
+```cpp
+//========================================//
+// 
+// GameObject.h
+// 
+// クラスの宣言
+// public関数の宣言
+// メンバ変数
+// テンプレート関数
+// 短いGetter / Setter
+// 
+//========================================//
+#pragma once
+
+#include <string>
+#include <vector>
+#include <memory>
+
+#include <DirectXMath.h>
+
+#include "Engine/Math/Transform.h"
+#include "Engine/Scene/Component.h"
+
+// すべての基本的なゲームオブジェクトの共通クラス
+class GameObject
+{
+public:
+	// 名前を受け取って初期化
+	explicit GameObject(const std::string& name)
+		: m_name(name)
+		, m_color(1.0f, 1.0f, 1.0f, 1.0f)
+	{
+	}
+
+	// ・所有者のアドレスを変えない。複製はClone()を使用する。
+	// 　　GameObjectはComponentを所有しており、
+	// 　　Componentは所有者のアドレスを覚えている。
+	// 　　そのため、GameObjectそのものを直接コピーしたり、
+	// 　　別のアドレスに移動したりすると、所有者のポインタに
+	// 　　問題が発生する可能性がある。
+	// 
+	// 　　ただし、objects.push_back(move(pObject));は使える。
+	// 　　これはGameObjectそのものを移動しているわけではなく、
+	// 　　GameObjectを所有しているunique_ptrを移動しているだけだから。
+	GameObject(const GameObject&) = delete;
+	GameObject& operator = (const GameObject&) = delete;
+	GameObject(GameObject&&) = delete;
+	GameObject& operator = (GameObject&&) = delete;
+
+	// 継承先を安全に破棄するためにvirtualを付ける
+	virtual ~GameObject() = default;
+
+	// 共通の更新処理
+	// 更新は派生クラスで実装しない
+	virtual void Update(float deltaTime) final;
+
+	// 描画は派生クラスで実装する
+	virtual void Draw() = 0;
+
+	// 自分自身を複製する
+	virtual std::unique_ptr<GameObject> Clone() const = 0;
+
+	// オブジェクト名を取得
+	const std::string& GetName() const
+	{
+		return m_name;
+	}
+
+	// GameObjectの名前を変更
+	void SetName(const std::string& name)
+	{
+		m_name = name;
+	}
+
+	// Transformを取得
+	Transform& GetTransform()
+	{
+		return m_transform;
+	}
+
+	// Transformの初期状態を保存
+	void SaveInitialTransform()
+	{
+		m_initialTransform = m_transform;
+	}
+
+	// 保存した初期状態に戻す
+	void ResetTransform()
+	{
+		m_transform = m_initialTransform;
+	}
+
+	// 実行時の有効状態（JSONには保存しない）
+	void SetActive(bool active) { m_active = active; }
+	bool IsActive() const { return m_active; }
+
+	// 色を設定
+	void SetColor(const DirectX::XMFLOAT4& color)
+	{
+		m_color = color;
+	}
+
+	// 現在の色を取得
+	const DirectX::XMFLOAT4& GetColor() const
+	{
+		return m_color;
+	}
+
+	// コンポーネントを追加する
+	bool AddComponent(std::unique_ptr<Component> pComponent);
+
+	// 指定した種類のコンポーネントが存在するか確認
+	// ・template は型を後から指定できるようする仕組み
+	// 　pObject->HasComponent<AutoRotateComponent>();みたいに書くと
+	// 　T には AutoRotateComponentが入る。
+	template <typename T>
+	T* GetComponent()
+	{
+		// 全コンポーネントを調べる
+		for (const auto& pComponent : m_components)
+		{
+			// 指定した型のコンポーネントか確認
+			if (auto* p = dynamic_cast<T*>(pComponent.get())) return p;
+		}
+
+		return nullptr;
+	}
+
+	// constオブジェクトから読み取り専用のComponentを取得する用
+	template <typename T>
+	const T* GetComponent() const
+	{
+		// 全コンポーネントを調べる
+		for (const auto& pComponent : m_components)
+		{
+			// 指定した型のコンポーネントか確認
+			if (auto* p = dynamic_cast<T*>(pComponent.get())) return p;
+		}
+
+		return nullptr;
+	}
+
+	template <typename T>
+	bool HasComponent() const
+	{
+		return GetComponent<T>() != nullptr;
+	}
+
+	// RegistryやEditor向け：保存用IDで存在確認する
+	bool HasComponentId(const std::string& typeId) const;
+
+	// コンポーネントを削除する
+	bool RemoveComponent(Component* pTarget);
+	
+	//全コンポーネントを取り除く
+	void ClearComponents();
+
+	// 取り付けられたコンポーネント一覧を取得
+	const std::vector<std::unique_ptr<Component>>& GetComponents() const
+	{
+		return m_components;
+	}
+
+	// 読み取り専用
+	const Transform& GetTransform() const
+	{
+		return m_transform;
+	}
+
+protected:
+	// GameObjectの共通情報を複製先へコピー
+	void CopyCommonStateTo(GameObject& destination) const;
+
+private:
+	std::string m_name;
+	bool m_active = true;
+
+	Transform m_transform;
+	Transform m_initialTransform;
+
+	// GameObjectがコンポーネントを所有
+	std::vector<std::unique_ptr<Component>> m_components;
+
+	// オブジェクトごとの色（RGBA）
+	DirectX::XMFLOAT4 m_color;
+};
+```
+
+`Source/Engine/Scene/GameObject.cpp`（ファイル全文・省略なし）
+
+```cpp
+//========================================//
+// 
+// GameObject.cpp
+// 
+//########################################
+// コンポーネント更新
+// 追加・削除処理
+// 重複チェック
+// 複数処理
+// 詳細な内部実装
+//########################################
+// 
+//========================================//
+
+#include "GameObject.h"
+
+#include <utility>
+#include <typeinfo>
+
+void GameObject::Update(float deltaTime)
+{
+	if (!m_active) return;
+	for (auto& pComponent : m_components)
+	{
+		// 有効なコンポーネントだけ更新
+		if (pComponent && pComponent->IsEnabled())
+		{
+			pComponent->Update(deltaTime);
+		}
+	}
+}
+
+bool GameObject::AddComponent(std::unique_ptr<Component> pComponent)
+{
+	// nullptrや、別のGameObjectを所有者にしたComponentは拒否
+	// 　Enemyに取り付けたComponentがPlayerの座標を変更してしまう
+	// 　みたいな間違いを防げる。
+	if (!pComponent || pComponent->GetOwner() != this) return false;
+
+	const char* id = pComponent->GetTypeId();
+
+	if (!id || !*id || HasComponentId(id)) return false;
+
+	// 既存のコンポーネントと型を比較
+	for (const auto& pExisting : m_components)
+	{
+		if (!pExisting) continue;
+
+		// 同じ型なら追加しない
+		if (typeid(*pExisting) == typeid(*pComponent))
+		{
+			return false;
+		}
+	}
+
+	// 重複していなければ追加する
+	m_components.push_back(std::move(pComponent));
+
+	return true;
+}
+
+bool GameObject::HasComponentId(const std::string& typeId) const
+{
+	for (const auto& pComponent : m_components)
+	{
+		if (pComponent && pComponent->GetTypeId() &&
+			typeId == pComponent->GetTypeId()) return true;
+	}
+
+	return false;
+}
+
+bool GameObject::RemoveComponent(Component* pTarget)
+{
+	if (pTarget == nullptr) return false;
+
+	// コンポーネントを先頭から調べる
+	// ・it はイテレータ：vectorの要素を順番に調べるため
+	// 　begin() : 最初の要素
+	// 　end() 　: 最後の要素の1つ後ろの位置
+	// 杉浦先生の言っていた内容は、
+	// 複数の要素を削除したい時に書く
+	for (auto it = m_components.begin();
+		it != m_components.end(); ++it)
+	{
+		// 削除対象を見つけたら
+		if (it->get() == pTarget)
+		{
+			// vectorから削除
+			m_components.erase(it);
+
+			// 削除したらループから抜けるため
+			// 一つ飛ばしにならず、エラーにならない
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void GameObject::ClearComponents()
+{
+	m_components.clear();
+}
+
+void GameObject::CopyCommonStateTo(GameObject& destination) const
+{
+	// 名前をコピー
+	destination.m_name = m_name;
+	destination.m_active = true;
+
+	// Transformをコピー
+	destination.m_transform = m_transform;
+
+	// Colorをコピー
+	destination.m_color = m_color;
+
+	// 複製先のコンポーネントを一度空にする
+	destination.m_components.clear();
+
+	// 元のコンポ―ネントを順番に複製
+	for (const auto& pComponent : m_components)
+	{
+		if (!pComponent) continue;
+
+		// 新しい所有者を渡して複製
+		std::unique_ptr<Component> pCopy =
+			pComponent->Clone(&destination);
+
+		if (pCopy)
+		{
+			destination.AddComponent(std::move(pCopy));
+		}
+	}
+
+	// 複製時の状態を初期状態として保存
+	destination.SaveInitialTransform();
+}
+```
+
+確認：SetActive(false)のオブジェクトは更新されず、SceneGameのDrawおよびCollisionSystemでも対象外になります。
+
+## 2. BoardPointer（相対マウス入力・仮想ドラッグ）
+
+第20回の基盤を再利用します。既に実装している場合は照合のみ。hを先に作成してからcppを作成します。
+
+`Source/Game/Input/BoardPointer.h`（ファイル全文・省略なし）
+
+```cpp
+#pragma once
+#include <Windows.h>
+#include "Game/Systems/GameTypes.h"
+
+class Camera;
+
+class BoardPointer
+{
+public:
+    // Startup.cppから呼ぶRaw Inputの入口
+    static bool RegisterMouse(HWND hWnd);
+    static void ReceiveRawInput(LPARAM lParam);
+    static void CancelRawInput();
+
+    // 毎フレーム1回呼ぶ（発射可能なPlay中のみ）
+    PointerFrame BuildFrame(Camera& camera);
+    void Reset();
+
+private:
+    bool m_bDragging = false;
+    bool m_bWaitForRelease = true;
+    BoardVec2 m_point;
+    BoardVec2 m_right;
+};
+```
+
+`Source/Game/Input/BoardPointer.cpp`（ファイル全文・省略なし）
+
+```cpp
+#include "BoardPointer.h"
+#include "Engine/Camera/Camera.h"
+#include <cmath>
+#ifdef _DEBUG
+#include "Engine/Debug/DebugEditor.h"
+#endif
+
+// WndProcとBuildFrameは同じメインスレッドで実行される。
+// マウス1台分の移動量を次のUpdateまで貯める。
+namespace
+{
+    HWND g_hInputWindow = nullptr;
+    float g_dx = 0.0f;
+    float g_dy = 0.0f;
+    bool g_collecting = false;
+    bool g_released = false;
+    bool g_cancelled = false;
+    const float kMouseSensitivity = 0.01f;
+}
+
+bool BoardPointer::RegisterMouse(HWND hWnd)
+{
+    if (!hWnd)
+        return false;
+
+    RAWINPUTDEVICE device{};
+    device.usUsagePage = 0x01;
+    device.usUsage = 0x02; // マウス
+    device.dwFlags = 0;   // 通常のマウス入力も残す
+    device.hwndTarget = hWnd;
+
+    if (!RegisterRawInputDevices(&device, 1, sizeof(device)))
+        return false;
+
+    g_hInputWindow = hWnd;
+    return true;
+}
+
+void BoardPointer::ReceiveRawInput(LPARAM lParam)
+{
+    if (!g_collecting)
+        return;
+
+    RAWINPUT input{};
+    UINT size = sizeof(input);
+    UINT result = GetRawInputData(
+        reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT,
+        &input, &size, sizeof(RAWINPUTHEADER));
+
+    if (result == static_cast<UINT>(-1) ||
+        result < sizeof(RAWINPUTHEADER) + sizeof(RAWMOUSE) ||
+        input.header.dwType != RIM_TYPEMOUSE)
+        return;
+
+    // 絶対座標型の機器の数値は移動量として扱わない。
+    const RAWMOUSE& mouse = input.data.mouse;
+    if (!(mouse.usFlags & MOUSE_MOVE_ABSOLUTE))
+    {
+        g_dx += static_cast<float>(mouse.lLastX);
+        g_dy += static_cast<float>(mouse.lLastY);
+    }
+
+    // ボタンを離した後の移動は次の発射に混ぜない。
+    if (mouse.usButtonFlags & RI_MOUSE_LEFT_BUTTON_UP)
+    {
+        g_released = true;
+        g_collecting = false;
+    }
+}
+
+void BoardPointer::CancelRawInput()
+{
+    g_collecting = false;
+    g_released = false;
+    g_dx = 0.0f;
+    g_dy = 0.0f;
+    g_cancelled = true;
+}
+
+void BoardPointer::Reset()
+{
+    m_bDragging = false;
+    m_bWaitForRelease = true;
+    m_point = {};
+    m_right = {};
+    CancelRawInput();
+    g_cancelled = false;
+}
+
+PointerFrame BoardPointer::BuildFrame(Camera& camera)
+{
+    PointerFrame frame{};
+    HWND hWnd = g_hInputWindow;
+
+    // フォーカス喪失・最小化・サイズ変更などは発射せず中断。
+    if (g_cancelled || !hWnd || GetForegroundWindow() != hWnd || IsIconic(hWnd))
+    {
+        Reset();
+        return frame;
+    }
+
+    bool held = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+    if (m_bWaitForRelease)
+    {
+        if (held)
+            return frame;
+        m_bWaitForRelease = false;
+    }
+
+    // すでにゲーム側で開始したドラッグは画面内外を問わず続ける。
+    if (m_bDragging)
+    {
+        float right = g_dx * kMouseSensitivity;
+        float forward = -g_dy * kMouseSensitivity;
+        g_dx = 0.0f;
+        g_dy = 0.0f;
+
+        // 画面の右・上方向をXZ平面の方向に変換する。
+        m_point.x += right * m_right.x - forward * m_right.z;
+        m_point.z += right * m_right.z + forward * m_right.x;
+
+        frame.valid = true;
+        frame.point = m_point;
+        if (g_released || !held)
+        {
+            frame.released = true;
+            Reset();
+        }
+        else
+        {
+            frame.held = true;
+        }
+        return frame;
+    }
+
+    // ここはドラッグ開始前だけ。UIや画面外からは開始しない。
+#ifdef _DEBUG
+    if (DebugEditor::WantsMouse())
+    {
+        Reset();
+        return frame;
+    }
+#endif
+    POINT mouse{};
+    RECT client{};
+    if (!GetCursorPos(&mouse) || !ScreenToClient(hWnd, &mouse) ||
+        !GetClientRect(hWnd, &client) || !PtInRect(&client, mouse))
+    {
+        Reset();
+        return frame;
+    }
+
+    frame.valid = true;
+    if (!held)
+        return frame;
+
+    // 転置前のView行列から、カメラの右方向(XZ)を取得する。
+    DirectX::XMFLOAT4X4 view = camera.GetViewMatrix(false);
+    float length = std::sqrt(view._11 * view._11 + view._31 * view._31);
+    if (!std::isfinite(length) || length < 0.0001f)
+    {
+        Reset();
+        return PointerFrame{};
+    }
+    m_right.x = view._11 / length;
+    m_right.z = view._31 / length;
+
+    // クリック位置に関係なく、仮想座標(0,0)から開始する。
+    m_point = {};
+    m_bDragging = true;
+    g_dx = 0.0f;
+    g_dy = 0.0f;
+    g_released = false;
+    g_collecting = true;
+    frame.pressed = true;
+    frame.held = true;
+    frame.point = m_point;
+    return frame;
+}
+```
+
+### 上から読む
+
+- `RegisterMouse`：Windowsに通常のマウス入力に加えてRaw Inputを受け取るよう登録する。`Startup.cpp` から1回呼ぶ。
+- `ReceiveRawInput`：`WM_INPUT` が来るたびに `lLastX/lLastY`（相対移動量）を `g_dx/g_dy` に足す。
+　カーソル座標が端で止まっても移動量は取得できる。絶対座標型のデバイスは相対量として扱わない。
+　左ボタンを離した通知後は移動を足さない。
+- `Reset`：仮想座標と進行中のドラッグを初期化。一度ボタンを離すまで新規開始しない。
+- `BuildFrame`：1フレーム1回だけ。開始前にフォーカス・画面内・ImGuiを確認。
+　押した位置は問わず仮想座標を(0,0)にする。開始後は相対移動量を積算する。
+　カメラの右方向と画面上方向をXZへ変換。
+　`kMouseSensitivity=0.01f` は1カウント当たりのワールド単位（最大ドラッグ3なら約300カウント）。
+　離したフレームは現在の仮想座標を返してからResetする。
+- ここでプレイヤーの中心や半径を使用しない。発射方向・速度は栗本のクラスが計算する。カーソルを強制移動・非表示にしない。
+
+### 穴埋め（練習のみ）
+
+`g_dx += 【空欄】;` 生のX移動量を足す。正解：`static_cast<float>(mouse.lLastX)`。
+
+### 2.1 Startup.cppにRaw Inputの入口を追加する（既存ファイル）
+
+以下は既存Startupの完成全文。変更はinclude、ウィンドウ作成直後の登録、
+WndProc冒頭の受信・中断通知のみ。既存のImGui・サイズ変更・FPS制御は維持。
+独自に編集済みなら第10回追加資料の差分を取り込むこと。BoardPointerの宣言と実装を先に用意する。
+
+`Source/App/Startup.cpp`（ファイル全文・省略なし）
+
+```cpp
+#include <windows.h>
+
+#include "Defines.h"
+#include "Main.h"
+#include "Game/Input/BoardPointer.h"
+
+#include <stdio.h>
+#include <crtdbg.h>
+
+#ifdef _DEBUG
+#include "Engine/Debug/DebugEditor.h"
+#endif
+
+// timeGetTime周りの使用
+#pragma comment(lib, "winmm.lib")
+
+namespace
+{
+	bool g_resizePending = false;
+
+	UINT g_pendingWidth = SCREEN_WIDTH;
+	UINT g_pendingHeight = SCREEN_HEIGHT;
+}
+
+//--- プロトタイプ宣言
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+// エントリポイント
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+{
+	// ウィンドウ作成前にDPI対応を有効化
+	SetProcessDpiAwarenessContext(
+		DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2
+	);
+
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+
+	//--- 変数宣言
+	WNDCLASSEX wcex;
+	HWND hWnd;
+	MSG message;
+
+	// ウィンドクラス情報の設定
+	ZeroMemory(&wcex, sizeof(wcex));
+	wcex.hInstance = hInstance;
+	wcex.lpszClassName = "Class Name";
+	wcex.lpfnWndProc = WndProc;
+	wcex.style = CS_CLASSDC | CS_DBLCLKS;
+	wcex.cbSize = sizeof(WNDCLASSEX);
+	wcex.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+	wcex.hIconSm = wcex.hIcon;
+	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wcex.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
+
+	// ウィンドウクラス情報の登録
+	if (!RegisterClassEx(&wcex))
+	{
+		MessageBox(NULL, "Failed to RegisterClassEx", "Error", MB_OK);
+		return 0;
+	}
+
+	// ウィンドウの作成
+	RECT rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+	DWORD style = WS_OVERLAPPEDWINDOW;
+	DWORD exStyle = 0;
+	AdjustWindowRectEx(&rect, style, FALSE, exStyle);
+	hWnd = CreateWindowEx(
+		exStyle, wcex.lpszClassName,
+		APP_TITLE, style,
+		CW_USEDEFAULT, CW_USEDEFAULT,
+		rect.right - rect.left, rect.bottom - rect.top,
+		HWND_DESKTOP,
+		NULL, hInstance, NULL
+	);
+
+	// Raw Inputでマウスの移動量を受け取る（Debug/Release共通）
+	if (!BoardPointer::RegisterMouse(hWnd))
+	{
+		MessageBoxA(hWnd, "Raw mouse registration failed.", "Input Error", MB_OK | MB_ICONERROR);
+		if (hWnd)
+			DestroyWindow(hWnd);
+		UnregisterClass(wcex.lpszClassName, hInstance);
+		return 0;
+	}
+
+	// ウィンドウの表示
+	ShowWindow(hWnd, nCmdShow);
+	UpdateWindow(hWnd);
+
+	// 初期化処理
+	if (FAILED(Init(hWnd, SCREEN_WIDTH, SCREEN_HEIGHT)))
+	{
+		Uninit();
+		UnregisterClass(wcex.lpszClassName, hInstance);
+		return 0;
+	}
+
+	// 初期化完了時の実際のクライアント領域を確認
+	RECT clientRect = {};
+
+	GetClientRect(hWnd, &clientRect);
+
+	g_pendingWidth =
+		clientRect.right - clientRect.left;
+	g_pendingHeight =
+		clientRect.bottom - clientRect.top;
+
+	g_resizePending = true;
+
+	//--- FPS制御
+	timeBeginPeriod(1);
+	DWORD countStartTime = timeGetTime();
+	DWORD preExecTime = countStartTime;
+#ifdef _DEBUG
+	// 高精度タイマーの周波数
+	LARGE_INTEGER performanceFrequency = {};
+	QueryPerformanceFrequency(&performanceFrequency);
+
+	// FPS計測を開始した時刻
+	LARGE_INTEGER fpsStartTime = {};
+	QueryPerformanceCounter(&fpsStartTime);
+
+	// 計測期間内に描画したフレーム数
+	unsigned int measuredFrames = 0;
+
+	// Update + Drawにかかった合計時間
+	double totalWorkMs = 0.0f;
+#endif
+
+	//--- ウィンドウの管理
+	while (1)
+	{
+		if (PeekMessage(&message, NULL, 0, 0, PM_NOREMOVE))
+		{
+			if (!GetMessage(&message, NULL, 0, 0))
+			{
+				break;
+			}
+			else
+			{
+				TranslateMessage(&message);
+				DispatchMessage(&message);
+			}
+		}
+		else
+		{
+			if (IsIconic(hWnd))
+			{
+				WaitMessage();
+				continue;
+			}
+
+			if (g_resizePending)
+			{
+				const UINT newWidth = g_pendingWidth;
+				const UINT newHeight = g_pendingHeight;
+				
+				g_resizePending = false;
+
+				HRESULT hr = ResizeGame(newWidth, newHeight);
+
+				if (FAILED(hr))
+				{
+					char errorText[256];
+
+					sprintf_s(
+						errorText,
+						"Failed to resize DirectX.\nHRESULT: 0x%08X",
+						static_cast<unsigned int>(hr)
+					);
+
+					MessageBoxA(
+						hWnd,
+						errorText,
+						"Resize Error",
+						MB_OK | MB_ICONERROR
+					);
+
+					DestroyWindow(hWnd);
+					continue;
+				}
+			}
+
+			DWORD nowTime = timeGetTime();
+			float diff = static_cast<float>(nowTime - preExecTime);
+			if (diff >= 1000.0f / fFPS)
+			{
+#ifdef _DEBUG
+				//========================================
+				// フレーム処理開始時刻
+				//========================================
+				LARGE_INTEGER frameStart = {};
+				QueryPerformanceCounter(&frameStart);
+
+#endif
+				//========================================
+				// ゲームを更新・描画
+				//========================================
+				Update();
+				Draw();
+
+#ifdef _DEBUG
+				//========================================
+				// フレーム処理終了時刻
+				//========================================
+				LARGE_INTEGER frameEnd = {};
+				QueryPerformanceCounter(&frameEnd);
+
+				const double frequency =
+					static_cast<double>(
+						performanceFrequency.QuadPart
+						);
+
+				// 今回のUpdate + Drawの所要時間
+				const double workMs =
+					static_cast<double>(
+						frameEnd.QuadPart -
+						frameStart.QuadPart
+						) * 1000.0 / frequency;
+
+				totalWorkMs += workMs;
+
+				++measuredFrames;
+
+				//========================================
+				// FPS計測期間の長さ
+				//========================================
+				const double elapsedSeconds =
+					static_cast<double>(
+						frameEnd.QuadPart -
+						fpsStartTime.QuadPart
+						) / frequency;
+
+				//========================================
+				// 約1秒ごとにタイトルを更新
+				//========================================
+				if (elapsedSeconds >= 1.0)
+				{
+					// 実際に描画されたFPS
+					const double actualFPS =
+						static_cast<double>(
+							measuredFrames
+							) / elapsedSeconds;
+
+					// 平均処理時間
+					const double averageWorkMs =
+						totalWorkMs /
+						static_cast<double>(
+							measuredFrames
+							);
+
+					// タイトル文字列を作成
+					char windowTitle[160] = {};
+
+					sprintf_s(
+						windowTitle,
+						sizeof(windowTitle),
+						"%s | FPS: %.1f | Work: %.2f ms",
+						APP_TITLE,
+						actualFPS,
+						averageWorkMs
+					);
+
+					// Windowsのタイトルバーを更新
+					SetWindowTextA(
+						hWnd,
+						windowTitle
+					);
+
+					// 次の計測期間を開始
+					measuredFrames = 0;
+					totalWorkMs = 0.0;
+					fpsStartTime = frameEnd;
+				}
+#endif
+
+				preExecTime = nowTime;
+			}
+		}
+	}
+
+
+	// 終了時
+	timeEndPeriod(1);
+	Uninit();
+	UnregisterClass(wcex.lpszClassName, hInstance);
+
+	return 0;
+}
+
+// ウィンドウプロシージャ
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	// ImGuiより先にRaw Inputを受け取り、Windowsの既定処理へ渡す。
+	if (message == WM_INPUT)
+	{
+		BoardPointer::ReceiveRawInput(lParam);
+		return DefWindowProc(hWnd, message, wParam, lParam);
+	}
+
+	if (message == WM_KILLFOCUS || message == WM_CANCELMODE ||
+		message == WM_ENTERSIZEMOVE ||
+		(message == WM_ACTIVATEAPP && !wParam) ||
+		(message == WM_SIZE && wParam == SIZE_MINIMIZED))
+	{
+		BoardPointer::CancelRawInput();
+	}
+
+	if (message == WM_SIZE)
+	{
+		if (wParam != SIZE_MINIMIZED)
+		{
+			UINT width = LOWORD(lParam);
+			UINT height = HIWORD(lParam);
+
+			if (width > 0 && height > 0)
+			{
+				g_pendingWidth = width;
+				g_pendingHeight = height;
+				g_resizePending = true;
+			}
+		}
+	}
+
+#ifdef _DEBUG
+	if (DebugEditor::HandleWndProc(
+		hWnd, message, wParam, lParam))
+	{
+		return true;
+	}
+#endif
+
+	switch (message)
+	{
+	case WM_GETMINMAXINFO:
+	{
+		MINMAXINFO* pInfo =
+			reinterpret_cast<MINMAXINFO*>(lParam);
+
+		pInfo->ptMinTrackSize.x = 900;
+		pInfo->ptMinTrackSize.y = 600;
+
+		return 0;
+	}
+
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		return 0;
+
+#ifdef _DEBUG
+	case WM_KEYDOWN:
+		if (wParam == VK_ESCAPE)
+		{
+			DestroyWindow(hWnd);
+			return 0;
+		}
+		break;
+#endif
+	}
+
+	return DefWindowProc(hWnd, message, wParam, lParam);
+}
+```
+
+`WM_INPUT` を処理した後は `DefWindowProc` を呼ぶ。
+通常のマウス入力も届くので既存Editorのクリック判定は変えない。登録失敗時だけMessageBoxで知らせる。
+
+## 3. HUD描画とComponentRegistry
+
+HudRendererは黒野担当のHudPresenterが返す表示データをSpriteで描くリード側の機能です。まずh、次にcppを書きます。
+
+`Source/Game/UI/HudRenderer.h`（ファイル全文・省略なし）
+
+```cpp
+#pragma once
+#include "Game/Systems/GameTypes.h"
+#include "Engine/Graphics/DirectX/Texture.h"
+class HudRenderer
+{
+  public:
+    bool Initialize();
+    void Draw(const HudView &view, bool hasBoss, int result);
+
+  private:
+    Texture m_white;
+    bool m_ready = false;
+    void Rect(float x, float y, float w, float h, HudColor color);
+    void Text(float x, float y, float pixel, const std::string &text, HudColor color);
+};
+```
+
+`Source/Game/UI/HudRenderer.cpp`（ファイル全文・省略なし）
+
+```cpp
+#include "HudRenderer.h"
+#include "Engine/Graphics/Sprite.h"
+#include <algorithm>
+#undef min
+#undef max
+using namespace DirectX;
+namespace
+{
+// 5x7ドット文字。行ごとに5ビットで点灯位置を表す。
+const unsigned char *Glyph(char c)
+{
+    static const unsigned char digits[10][7] = {
+        {14, 17, 19, 21, 25, 17, 14}, {4, 12, 4, 4, 4, 4, 14},  {14, 17, 1, 2, 4, 8, 31},
+        {30, 1, 1, 14, 1, 1, 30},     {2, 6, 10, 18, 31, 2, 2}, {31, 16, 16, 30, 1, 1, 30},
+        {14, 16, 16, 30, 17, 17, 14}, {31, 1, 2, 4, 8, 8, 8},   {14, 17, 17, 14, 17, 17, 14},
+        {14, 17, 17, 15, 1, 1, 14}};
+    static const unsigned char letters[26][7] = {
+        {14, 17, 17, 31, 17, 17, 17}, {30, 17, 17, 30, 17, 17, 30}, {14, 17, 16, 16, 16, 17, 14},
+        {30, 17, 17, 17, 17, 17, 30}, {31, 16, 16, 30, 16, 16, 31}, {31, 16, 16, 30, 16, 16, 16},
+        {14, 17, 16, 23, 17, 17, 14}, {17, 17, 17, 31, 17, 17, 17}, {14, 4, 4, 4, 4, 4, 14},
+        {7, 2, 2, 2, 2, 18, 12},      {17, 18, 20, 24, 20, 18, 17}, {16, 16, 16, 16, 16, 16, 31},
+        {17, 27, 21, 21, 17, 17, 17}, {17, 25, 21, 19, 17, 17, 17}, {14, 17, 17, 17, 17, 17, 14},
+        {30, 17, 17, 30, 16, 16, 16}, {14, 17, 17, 17, 21, 18, 13}, {30, 17, 17, 30, 20, 18, 17},
+        {15, 16, 16, 14, 1, 1, 30},   {31, 4, 4, 4, 4, 4, 4},       {17, 17, 17, 17, 17, 17, 14},
+        {17, 17, 17, 17, 17, 10, 4},  {17, 17, 17, 21, 21, 21, 10}, {17, 17, 10, 4, 10, 17, 17},
+        {17, 17, 10, 4, 4, 4, 4},     {31, 1, 2, 4, 8, 16, 31}};
+    if (c >= '0' && c <= '9')
+        return digits[c - '0'];
+    if (c >= 'A' && c <= 'Z')
+        return letters[c - 'A'];
+    return nullptr;
+}
+} // namespace
+bool HudRenderer::Initialize()
+{
+    const unsigned int white = 0xffffffffu;
+    m_ready = SUCCEEDED(m_white.Create(DXGI_FORMAT_R8G8B8A8_UNORM, 1, 1, &white));
+    return m_ready;
+}
+void HudRenderer::Rect(float x, float y, float w, float h, HudColor c)
+{
+    if (w <= 0 || h <= 0)
+        return;
+    Sprite::SetOffset(XMFLOAT2(x + w / 2, y + h / 2));
+    Sprite::SetSize(XMFLOAT2(w, h));
+    Sprite::SetColor(XMFLOAT4(c.r, c.g, c.b, c.a));
+    Sprite::Draw();
+}
+void HudRenderer::Text(float x, float y, float p, const std::string &text, HudColor c)
+{
+    for (char ch : text)
+    {
+        const auto *rows = Glyph(ch);
+        if (rows)
+            for (int r = 0; r < 7; ++r)
+                for (int k = 0; k < 5; ++k)
+                    if (rows[r] & (1u << (4 - k)))
+                        Rect(x + k * p, y + r * p, p, p, c);
+        x += 6 * p;
+    }
+}
+void HudRenderer::Draw(const HudView &view, bool hasBoss, int result)
+{
+    if (!m_ready || !GetRenderWidth() || !GetRenderHeight())
+        return;
+    const float w = float(GetRenderWidth()), h = float(GetRenderHeight());
+    const float u = std::max(1.0f, std::min(w / 640.0f, h / 360.0f));
+    const HudColor bg{0.04f, 0.10f, 0.16f, 0.88f}, white{1, 1, 1, 1}, red{1, 0.3f, 0.25f, 1};
+    // HUD専用の画面座標（左上原点）。深度・カリングを退避して戻す。
+    ID3D11DepthStencilState *pDepth = nullptr;
+    UINT stencil = 0;
+    ID3D11RasterizerState *pRaster = nullptr;
+    GetContext()->OMGetDepthStencilState(&pDepth, &stencil);
+    GetContext()->RSGetState(&pRaster);
+    SetDepthTest(false);
+    SetCullingMode(D3D11_CULL_NONE);
+    XMFLOAT4X4 identity, projection;
+    XMStoreFloat4x4(&identity, XMMatrixIdentity());
+    XMStoreFloat4x4(&projection,
+                    XMMatrixTranspose(XMMatrixOrthographicOffCenterLH(0, w, h, 0, 0, 1)));
+    Sprite::SetWorld(identity);
+    Sprite::SetView(identity);
+    Sprite::SetProjection(projection);
+    Sprite::SetVertexShader(nullptr);
+    Sprite::SetPixelShader(nullptr);
+    Sprite::SetTexture(&m_white);
+    Sprite::SetUVPos(XMFLOAT2(0, 0));
+    Sprite::SetUVScale(XMFLOAT2(1, 1));
+    if (hasBoss)
+    {
+        Rect(12 * u, 12 * u, 210 * u, 42 * u, bg);
+        Text(18 * u, 17 * u, 2 * u, "BOSS HP", white);
+        Rect(18 * u, 34 * u, 198 * u, 13 * u, {0.25f, 0.25f, 0.25f, 1});
+        Rect(18 * u, 34 * u, 198 * u * view.bossRatio, 13 * u, red);
+    }
+    Rect(w - 135 * u, 12 * u, 123 * u, 40 * u, bg);
+    Text(w - 129 * u, 17 * u, 2 * u, "NEXT", white);
+    Text(w - 129 * u, 34 * u, 2 * u, view.nextEnemiesText, white);
+    Rect(w - 135 * u, h - 58 * u, 123 * u, 46 * u, bg);
+    Text(w - 129 * u, h - 53 * u, 2 * u, "SHOTS", white);
+    Text(w - 129 * u, h - 35 * u, 3 * u, view.shotsText, white);
+    Text(12 * u, h - 20 * u, 1.5f * u, "R RETRY", white);
+    if (result)
+    {
+        std::string title = result == 1 ? "CLEAR" : "GAME OVER";
+        float p = 4 * u, tw = 6 * p * title.size();
+        Rect((w - tw) / 2 - 12 * u, h / 2 - 25 * u, tw + 24 * u, 50 * u, bg);
+        Text((w - tw) / 2, h / 2 - 14 * u, p, title, white);
+    }
+    Sprite::SetTexture(nullptr);
+    GetContext()->OMSetDepthStencilState(pDepth, stencil);
+    GetContext()->RSSetState(pRaster);
+    if (pDepth)
+        pDepth->Release();
+    if (pRaster)
+        pRaster->Release();
+}
+```
+
+Registryは各担当者のComponentが完成してから登録します。既存登録も含む全文です。設定だけを保存し、現在HPや速度などは保存しません。
+
+`Source/Game/Components/ComponentRegistry.h`（ファイル全文・省略なし）
+
+```cpp
+#pragma once
+
+#include "Engine/Scene/Component.h"
+#include "ThirdParty/nlohmann/json.hpp"
+
+#include <memory>
+#include <string>
+#include <vector>
+
+class GameObject;
+
+class ComponentRegistry
+{
+public:
+	// コンポーネント1種類分の登録情報
+	struct Entry
+	{
+		// JSON保存用のID
+		const char* typeId;
+		
+		// Inspectorの表示名
+		const char* displayName;
+
+		// コンポーネント生成関数
+		// ・関数ポインタ … 戻り値の型 (*ポインタ変数名)(引数)
+		// 
+		// 　GameObjectのポインタを受け取り、
+		// 　Componentのunique_ptrを返す関数。
+		std::unique_ptr<Component> (*create)(GameObject*);
+
+		// JSON保存関数
+		void (*save)(const Component&, nlohmann::json&);
+
+		// JSON読込関数
+		void (*load)(Component&, const nlohmann::json&);
+	};
+
+	// 登録されている全種類を取得
+	static const std::vector<Entry>& GetEntries();
+
+	// IDから登録情報を探す
+	static const Entry* Find(const std::string& typeId);
+};
+```
+
+`Source/Game/Components/ComponentRegistry.cpp`（ファイル全文・省略なし）
+
+```cpp
+#include "ComponentRegistry.h"
+
+#include "Game/Components/AutoRotateComponent.h"
+#include "Game/Components/BallMotionComponent.h"
+#include "Game/Components/ColliderComponent.h"
+#include "Game/Components/HealthComponent.h"
+#include "Game/Components/MoveComponent.h"
+#include "Game/Components/PlayerInputComponent.h"
+#include "Game/Components/PlayerLaunchComponent.h"
+#include "Game/Components/ReflectionCounterComponent.h"
+
+#include <cmath>
+#include <stdexcept>
+
+using namespace std;
+using json = nlohmann::json;
+
+namespace {
+// JSONから3つのfloat値を読み込み
+void ReadVector3(const json &value, float result[3], const char *field) {
+  if (!value.is_array() || value.size() != 3) {
+    throw runtime_error(string(field) + "must contain 3 numbers.");
+  }
+
+  for (int i = 0; i < 3; ++i) {
+    result[i] = value.at(i).get<float>();
+  }
+}
+} // namespace
+
+const vector<ComponentRegistry::Entry> &ComponentRegistry::GetEntries() {
+  // ・ラムダ式で記述
+  // 　　別の名前付き関数を定義しなくても
+  // 　　その場で関数の処理を記述できる記法
+  static const vector<Entry> entries = {
+      //========================================
+      // AutoRotate
+      //========================================
+      {"AutoRotate",  // JSON保存用のID
+       "Auto Rotate", // Inspectorの表示名
+
+       // 生成
+       [](GameObject *owner) -> unique_ptr<Component> {
+         return unique_ptr<Component>(
+             new AutoRotateComponent(owner, 0.0f, 360.0f, 0.0f));
+       },
+
+       // 保存
+       [](const Component &base, json &data) {
+         // 今回の場合、
+         // 〇dynamic_cast … 実際に指定した派生型へ
+         // 　　　　　　　　　変換できるか確認する。
+         // ×static_cast  … 基底クラスからの変換では、
+         // 　　　　　　　　　実際の派生型を実行時に確認しない。
+         // これは登録ミスによって別のComponentが渡された場合、
+         // 安全に失敗するとは限らないため。
+         const AutoRotateComponent &c =
+             dynamic_cast<const AutoRotateComponent &>(base);
+
+         const float *speed = c.GetRotationSpeed();
+
+         data["speed"] = {speed[0], speed[1], speed[2]};
+       },
+
+       // 読み込み
+       [](Component &base, const json &data) {
+         float speed[3];
+
+         ReadVector3(data.at("speed"), speed, "speed");
+
+         AutoRotateComponent &c = dynamic_cast<AutoRotateComponent &>(base);
+
+         c.SetRotationSpeed(speed[0], speed[1], speed[2]);
+       }},
+
+      //========================================
+      // Move
+      //========================================
+      {"Move", "Move",
+
+       // 生成
+       [](GameObject *owner) -> unique_ptr<Component> {
+         return unique_ptr<Component>(
+             new MoveComponent(owner, 1.0f, 1.0f, 0.0f));
+       },
+
+       // 保存
+       [](const Component &base, json &data) {
+         const MoveComponent &c = dynamic_cast<const MoveComponent &>(base);
+
+         const float *velocity = c.GetVelocity();
+
+         data["velocity"] = {velocity[0], velocity[1], velocity[2]};
+       },
+
+       // 読み込み
+       [](Component &base, const json &data) {
+         float velocity[3];
+
+         ReadVector3(data.at("velocity"), velocity, "velocity");
+
+         MoveComponent &c = dynamic_cast<MoveComponent &>(base);
+
+         c.SetVelocity(velocity[0], velocity[1], velocity[2]);
+       }}
+
+      //========================================
+      // 追加はここから
+      //========================================
+      ,
+      {"BallMotion", "BallMotion",
+       [](GameObject *pOwner) -> unique_ptr<Component> {
+         return std::make_unique<BallMotionComponent>(pOwner);
+       },
+       [](const Component &base, json &data) {
+         const auto &c = dynamic_cast<const BallMotionComponent &>(base);
+         data["deceleration"] = c.GetDeceleration();
+         data["stopSpeed"] = c.GetStopSpeed();
+         data["maxSpeed"] = c.GetMaxSpeed();
+       },
+       [](Component &base, const json &data) {
+         auto &c = dynamic_cast<BallMotionComponent &>(base);
+         c.Configure(data.at("deceleration").get<float>(),
+                     data.at("stopSpeed").get<float>(),
+                     data.at("maxSpeed").get<float>());
+       }},
+      {"PlayerLaunch", "PlayerLaunch",
+       [](GameObject *pOwner) -> unique_ptr<Component> {
+         return std::make_unique<PlayerLaunchComponent>(pOwner);
+       },
+       [](const Component &base, json &data) {
+         const auto &c = dynamic_cast<const PlayerLaunchComponent &>(base);
+         data["minDrag"] = c.GetMinDrag();
+         data["maxDrag"] = c.GetMaxDrag();
+         data["maxSpeed"] = c.GetMaxSpeed();
+       },
+       [](Component &base, const json &data) {
+         auto &c = dynamic_cast<PlayerLaunchComponent &>(base);
+         c.Configure(data.at("minDrag").get<float>(),
+                     data.at("maxDrag").get<float>(),
+                     data.at("maxSpeed").get<float>());
+       }},
+      {"PlayerInput", "PlayerInput",
+       [](GameObject *pOwner) -> unique_ptr<Component> {
+         return std::make_unique<PlayerInputComponent>(pOwner);
+       },
+       [](const Component &base, json &data) {
+         (void)base;
+         (void)data;
+       },
+       [](Component &base, const json &data) {
+         (void)base;
+         (void)data;
+       }},
+      {"ReflectionCounter", "ReflectionCounter",
+       [](GameObject *pOwner) -> unique_ptr<Component> {
+         return std::make_unique<ReflectionCounterComponent>(pOwner);
+       },
+       [](const Component &base, json &data) {
+         (void)base;
+         (void)data;
+       },
+       [](Component &base, const json &data) {
+         (void)base;
+         (void)data;
+       }},
+      {"Health", "Health",
+       [](GameObject *pOwner) -> unique_ptr<Component> {
+         return std::make_unique<HealthComponent>(pOwner);
+       },
+       [](const Component &base, json &data) {
+         const auto &c = dynamic_cast<const HealthComponent &>(base);
+         data["maxHP"] = c.GetMaxHP();
+       },
+       [](Component &base, const json &data) {
+         auto &c = dynamic_cast<HealthComponent &>(base);
+         c.Reset(data.at("maxHP").get<int>());
+       }},
+      {"Collider", "Collider",
+       [](GameObject *pOwner) -> unique_ptr<Component> {
+         return std::make_unique<ColliderComponent>(pOwner);
+       },
+       [](const Component &base, json &data) {
+         const auto &c = dynamic_cast<const ColliderComponent &>(base);
+         const auto &v = c.GetConfig();
+         data["role"] = int(v.role);
+         data["shape"] = int(v.shape);
+         data["radius"] = v.radius;
+         data["halfExtent"] = {v.halfExtent.x, v.halfExtent.z};
+         data["restitution"] = v.restitution;
+       },
+       [](Component &base, const json &data) {
+         auto &c = dynamic_cast<ColliderComponent &>(base);
+         ColliderConfig v;
+         v.role = GameRole(data.at("role").get<int>());
+         v.shape = ColliderShape(data.at("shape").get<int>());
+         v.radius = data.at("radius").get<float>();
+         const auto &h = data.at("halfExtent");
+         if (!h.is_array() || h.size() != 2)
+           throw runtime_error("Invalid halfExtent");
+         v.halfExtent = {h.at(0).get<float>(), h.at(1).get<float>()};
+         v.restitution = data.at("restitution").get<float>();
+         c.Configure(v);
+       }}};
+
+  return entries;
+}
+
+const ComponentRegistry::Entry *
+ComponentRegistry::Find(const std::string &typeId) {
+  const vector<Entry> &entries = GetEntries();
+
+  // 登録一覧を先頭から調べる
+  for (const Entry &entry : entries) {
+    if (typeId == entry.typeId) {
+      return &entry;
+    }
+  }
+
+  // 見つからなかった場合はnullptrで返す
+  return nullptr;
+}
+```
+
+## 4. SceneGame.h（統合の宣言）
+
+既存のメンバを残したまま、新しいメンバと各ゲーム用関数を追加した正本です。
+BoardPointer、CollisionSystem、TurnSystem、HudRendererのincludeとメンバを確認します。
+
+`Source/Game/Scenes/SceneGame.h`（ファイル全文・省略なし）
+
+```cpp
+#ifndef __SCENE_GAME_H__
+#define __SCENE_GAME_H__
+
+#include "Engine/Camera/Camera.h"
+#include "Engine/Graphics/StaticFbxModel.h"
+#include "Engine/Scene/GameObject.h"
+#include "Engine/Scene/Scene.h"
+
+#include "Game/Input/BoardPointer.h"
+#include "Game/Systems/CollisionSystem.h"
+#include "Game/Systems/TurnSystem.h"
+#include "Game/UI/HudRenderer.h"
+
+#include <memory>
+#include <vector>
+
+class CameraPlay;
+
+class SceneGame : public Scene {
+public:
+  SceneGame();
+  ~SceneGame();
+
+  void Update() final;
+  void Draw() final;
+
+  void OnResize(unsigned int width, unsigned int height) override;
+
+private:
+  void DrawDebugGrid();
+  void ResetGameplay();
+  void UpdateGameplay(float dt);
+  void UpdatePlayerInput();
+  void UpdatePhysics(float dt);
+  void ApplyCollisionNotices(const std::vector<CollisionNotice> &notices);
+  bool AnyMoving() const;
+  void FinishTurn();
+  bool SpawnEnemy();
+  void UpdateHUD();
+  void DrawGameplayHUD();
+  bool LoadGameplayStage();
+
+private: // main
+  // GameObjectをまとめて管理する
+  std::vector<std::unique_ptr<GameObject>> m_objects;
+
+  // 編集専用カメラ
+  std::unique_ptr<Camera> m_pCamera;
+
+  // プレイ専用カメラ
+  std::unique_ptr<CameraPlay> m_pPlayCamera;
+
+  // グリッドを表示するかどうか
+  bool m_showDebugGrid;
+
+private: // Systems
+  CollisionSystem m_collision;
+  TurnSystem m_turn;
+  HudRenderer m_hudRenderer;
+  HudView m_hud;
+  int m_result = 0; // 0: playing, 1: clear, 2: game over
+  int m_completedShots = 0;
+  int m_spawnSerial = 0;
+  bool m_hasBoss = false;
+  bool m_hadEnemies = false;
+  BoardPointer m_boardPointer;
+  bool m_gameReady = false;
+  float m_arrowY = 0.65f;
+
+#ifdef _DEBUG
+private: // Debug
+  bool m_bShowColliders = true;
+  void UpdateColliderDebug();
+  void DrawColliderDebug();
+  void DrawColliderDebugPanel();
+
+  // true  : Edit Mode
+  // false : Play Mode
+  bool m_isEditMode = true;
+
+  // Play中に編集用のGameObjectを保管する
+  std::vector<std::unique_ptr<GameObject>> m_editObjects;
+
+  // Play Modeを開始する
+  void EnterPlayMode();
+  void DrawEditor();
+
+  // Play Modeを終了する
+  void ExitPlayMode();
+#endif
+};
+
+#endif // __SCENE_GAME_H__
+```
+
+## 準備. SceneGameplay.cppを新しく作る
+
+SceneGameplayというクラスではなく、SceneGameのメンバ関数を別のcppに書きます。
+空のファイルから、第5章～第14章の10ブロックを順番に追記します。
+include・定数・Enabledなどの補助関数・LoadGameplayStageも最初のブロックに含まれます。
+
+## 5. ゲーム初期化
+
+`Source/Game/Scenes/SceneGameplay.cpp`（順番に追記 01/10｜正本 1～111 行）
+
+ここがcppの先頭です。include、namespace内の定数・補助関数、LoadGameplayStage、
+ResetGameplayを全部書きます。Enabledは有効なComponentを取得、Roleは種類判定、
+Playerはプレイヤーを探し、PositionはXZを返します。LoadGameplayStageはJSONを読み、失敗時だけMessageBoxを出します。
+
+```cpp
+// SceneGameのうち、ゲームの進行だけを担当するファイル。
+#include "SceneGame.h"
+#include "Engine/Camera/CameraPlay.h"
+#include "Engine/Graphics/Geometory.h"
+#include "Game/Serialization/SceneSerializer.h"
+#include "Game/Components/BallMotionComponent.h"
+#include "Game/Components/ColliderComponent.h"
+#include "Game/Components/HealthComponent.h"
+#include "Game/Components/MoveComponent.h"
+#include "Game/Components/PlayerInputComponent.h"
+#include "Game/Components/PlayerLaunchComponent.h"
+#include "Game/Components/ReflectionCounterComponent.h"
+#include "Game/Objects/PrimitiveObject.h"
+#include "Game/Systems/DamageFormula.h"
+#include "Game/UI/HudPresenter.h"
+#include <Windows.h>
+#include <cmath>
+#include <string>
+
+using namespace DirectX;
+using namespace std;
+
+namespace {
+const char* const kStageFilePath = "Assets/Stages/Stage_Lesson19.json";
+// プロトタイプの仮仕様。企画確定後に変更する。
+constexpr int kShots = 10;
+constexpr int kWaveInterval = 3;
+constexpr float kBaseDamage = 3.0f;
+constexpr float kMultiplier = 0.5f;
+template <class T> T *Enabled(GameObject &o) {
+  T* p = o.GetComponent<T>();
+  if (!p || !p->IsEnabled())
+    return nullptr;
+  return p;
+}
+bool Role(GameObject &o, GameRole role) {
+  auto *p = Enabled<ColliderComponent>(o);
+  return p && p->GetConfig().role == role;
+}
+GameObject *Player(const vector<unique_ptr<GameObject>> &objects) {
+  for (const auto &p : objects)
+    if (p && p->IsActive() && Role(*p, GameRole::Player))
+      return p.get();
+  return nullptr;
+}
+BoardVec2 Position(const GameObject &o) {
+  const auto &t = o.GetTransform();
+  return {t.position[0], t.position[2]};
+}
+
+} // namespace
+
+//======================================================================
+// ゲームの統合処理（第19回）。エディタの処理とは分けて管理する。
+//======================================================================
+bool SceneGame::LoadGameplayStage() {
+  std::string error;
+  if (SceneSerializer::Load(kStageFilePath, m_objects, *m_pPlayCamera, error)) {
+    m_collision.Reset();
+    return true;
+  }
+  m_gameReady = false;
+  MessageBoxA(nullptr, error.c_str(), "Stage Load Error", MB_OK | MB_ICONERROR);
+  return false;
+}
+void SceneGame::ResetGameplay() {
+  m_collision.Reset();
+  m_turn.Reset(kShots);
+  m_boardPointer.Reset();
+  m_result = 0;
+  m_completedShots = 0;
+  m_spawnSerial = 0;
+  m_hasBoss = false;
+  m_hadEnemies = false;
+
+  for (auto& p : m_objects)
+  {
+    if (!p) continue;
+    p->SetActive(true);
+
+    auto* pMotion = Enabled<BallMotionComponent>(*p);
+    auto* pOld = p->GetComponent<MoveComponent>();
+    auto* pCounter = Enabled<ReflectionCounterComponent>(*p);
+    auto* pHP = Enabled<HealthComponent>(*p);
+    auto* pInput = Enabled<PlayerInputComponent>(*p);
+
+    if (pMotion)
+    {
+      pMotion->Stop();
+      if (pOld) pOld->SetEnabled(false);
+    }
+    if (pCounter) pCounter->Reset();
+    if (pHP) pHP->Reset(pHP->GetMaxHP());
+    if (pInput) pInput->Cancel();
+    if (Role(*p, GameRole::Boss)) m_hasBoss = true;
+    if (Role(*p, GameRole::Enemy)) m_hadEnemies = true;
+  }
+
+  GameObject* pPlayer = Player(m_objects);
+  m_gameReady = false;
+  if (pPlayer)
+  {
+    m_gameReady = Enabled<PlayerInputComponent>(*pPlayer) &&
+                  Enabled<PlayerLaunchComponent>(*pPlayer) &&
+                  Enabled<BallMotionComponent>(*pPlayer);
+  }
+  if (!m_gameReady)
+    MessageBoxA(nullptr, "Player components missing. Check Stage_Lesson19.json.",
+                "Game Setup", MB_OK | MB_ICONERROR);
+  UpdateHUD();
+}
+```
+
+### 上から読む
+
+手数・結果・反射・HP・入力を最初の状態に戻す。全物体を順番に確認し、
+その物体に付いているComponentだけに処理する。必要なプレイヤー機能がなければエラーを表示。
+
+### 穴埋め練習
+
+問題：`m_turn.Reset(【空欄】);`
+
+確認する結果：初期手数10、結果0、速度0。
+
+<details>
+<summary>模範解答（考えてから開く）</summary>
+
+```cpp
+kShots
+```
+
+</details>
+
+## 6. マウスから発射まで
+
+`Source/Game/Scenes/SceneGameplay.cpp`（順番に追記 02/10｜正本 112～156 行）
+
+直前まで書いた同じcppの末尾に、以下を続けて書きます。
+
+```cpp
+void SceneGame::UpdatePlayerInput()
+{
+    GameObject* pPlayer = Player(m_objects);
+    if (!pPlayer)
+    {
+        m_boardPointer.Reset();
+        return;
+    }
+    auto* pInput = Enabled<PlayerInputComponent>(*pPlayer);
+    auto* pLaunch = Enabled<PlayerLaunchComponent>(*pPlayer);
+    auto* pMotion = Enabled<BallMotionComponent>(*pPlayer);
+    if (!pInput || !pLaunch || !pMotion || !m_pPlayCamera || !m_turn.CanLaunch())
+    {
+        m_boardPointer.Reset();
+        if (pInput)
+            pInput->Cancel();
+        return;
+    }
+
+    // プレイヤーのクリック判定は不要。移動量だけを取得する。
+    PointerFrame frame = m_boardPointer.BuildFrame(*m_pPlayCamera);
+    pInput->Sample(frame, true);
+
+    // ドラッグを離した時だけ速度を作る。
+    BoardVec2 v;
+    if (!pLaunch->TryBuildVelocity(pInput->GetAim(), v))
+        return;
+    float speed = std::sqrt(v.x * v.x + v.z * v.z);
+    if (speed <= pMotion->GetStopSpeed())
+        return;
+    if (!m_turn.TryConsumeShot())
+        return;
+
+    m_collision.Reset();
+    for (auto& pObject : m_objects)
+    {
+        if (!pObject || !pObject->IsActive())
+            continue;
+        auto* pCounter = Enabled<ReflectionCounterComponent>(*pObject);
+        if (pCounter)
+            pCounter->Reset();
+    }
+    pMotion->SetVelocity(v);
+    pInput->Cancel();
+}
+```
+
+### 上から読む
+
+プレイヤー（操作対象のGameRole::Player）と必要なComponentがあるか確認。
+選択クリックは不要。手番中でなければBoardPointerとAimStateを中断。
+BoardPointer→Sample→TryBuildVelocity。発射できるときだけ手数を消費。
+他の球の反射回数も初期化。最後にSetVelocityして発射する。
+
+### 穴埋め練習
+
+問題：`pMotion->SetVelocity(【空欄】);`
+
+確認する結果：プレイヤー以外の画面内でもドラッグ・発射できる。端に到達しても動かし続けると強さが増え、離すと一手だけ消費。
+
+<details>
+<summary>模範解答（考えてから開く）</summary>
+
+```cpp
+v
+```
+
+</details>
+
+## 7. 毎フレームの処理
+
+`Source/Game/Scenes/SceneGameplay.cpp`（順番に追記 03/10｜正本 157～170 行）
+
+直前まで書いた同じcppの末尾に、以下を続けて書きます。
+
+```cpp
+void SceneGame::UpdateGameplay(float dt) {
+  if (!m_gameReady || m_result)
+  {
+    m_boardPointer.Reset();
+    return;
+  }
+  UpdatePlayerInput();
+  if (m_turn.IsResolving()) {
+    UpdatePhysics(dt);
+    if (m_turn.EndIfStopped(AnyMoving()))
+      FinishTurn();
+  }
+  UpdateHUD();
+}
+```
+
+### 上から読む
+
+入力を先に調べる。発射中だけ物理更新。全て止まったら手番終了。最後に表示データを作る。
+
+### 穴埋め練習
+
+問題：`if (m_turn.EndIfStopped(【空欄】))`
+
+確認する結果：全球停止時だけFinishTurnが1回動く。
+
+<details>
+<summary>模範解答（考えてから開く）</summary>
+
+```cpp
+AnyMoving()
+```
+
+</details>
+
+## 8. 物理更新
+
+`Source/Game/Scenes/SceneGameplay.cpp`（順番に追記 04/10｜正本 171～183 行）
+
+直前まで書いた同じcppの末尾に、以下を続けて書きます。
+
+```cpp
+void SceneGame::UpdatePhysics(float dt) {
+  // 入力はここに入れない。移動と衝突を1フレーム4回に分ける。
+  for (int i = 0; i < 4; ++i) {
+    for (auto& p : m_objects)
+    {
+      if (p && p->IsActive())
+        p->Update(dt / 4);
+    }
+    vector<CollisionNotice> notices;
+    m_collision.Step(m_objects, notices);
+    ApplyCollisionNotices(notices);
+  }
+}
+```
+
+### 上から読む
+
+1フレームを4回に分ける。各物体をdt/4秒ずつ移動し、衝突を調べる。通知はすぐ消費する。入力は4回呼ばない。
+
+### 穴埋め練習
+
+問題：`p->Update(【空欄】);`
+
+確認する結果：4回合計でdt秒だけ更新。
+
+<details>
+<summary>模範解答（考えてから開く）</summary>
+
+```cpp
+dt / 4
+```
+
+</details>
+
+## 9. HPへ通知を渡す
+
+`Source/Game/Scenes/SceneGameplay.cpp`（順番に追記 05/10｜正本 184～206 行）
+
+直前まで書いた同じcppの末尾に、以下を続けて書きます。
+
+```cpp
+void SceneGame::ApplyCollisionNotices(const vector<CollisionNotice> &notices) {
+  // CollisionSystemが攻撃できる組み合わせだけを通知する。
+  for (const CollisionNotice& notice : notices)
+  {
+    GameObject* pTarget = notice.target;
+    if (!notice.attacker || !pTarget)
+      continue;
+    if (!notice.attacker->IsActive() || !pTarget->IsActive())
+      continue;
+    auto* pHP = Enabled<HealthComponent>(*pTarget);
+    if (!pHP)
+      continue;
+
+    int damage = DamageFormula::Calculate(kBaseDamage, kMultiplier, notice.reflectionCount);
+    pHP->ApplyDamage(damage);
+    if (pHP->IsDead())
+    {
+      auto* pMotion = Enabled<BallMotionComponent>(*pTarget);
+      if (pMotion) pMotion->Stop();
+      pTarget->SetActive(false); // vectorから削除せず、無効にする。
+    }
+  }
+}
+```
+
+### 上から読む
+
+通知の対象が有効ならHPを取得。DamageFormulaで整数ダメージを作ってApplyDamage。HP0なら停止し、SetActive(false)。
+
+### 穴埋め練習
+
+問題：`pTarget->SetActive(【空欄】);`
+
+確認する結果：敵撃破後に描画・更新・衝突されない。
+
+<details>
+<summary>模範解答（考えてから開く）</summary>
+
+```cpp
+false
+```
+
+</details>
+
+## 10. 全球停止の確認
+
+`Source/Game/Scenes/SceneGameplay.cpp`（順番に追記 06/10｜正本 207～219 行）
+
+直前まで書いた同じcppの末尾に、以下を続けて書きます。
+
+```cpp
+bool SceneGame::AnyMoving() const {
+  for (const auto& p : m_objects)
+  {
+    if (!p || !p->IsActive())
+      continue;
+    if (!Role(*p, GameRole::Player) && !Role(*p, GameRole::Enemy))
+      continue;
+    auto* pMotion = Enabled<BallMotionComponent>(*p);
+    if (pMotion && pMotion->IsMoving())
+      return true;
+  }
+  return false;
+}
+```
+
+### 上から読む
+
+有効なプレイヤーと敵だけを順に調べる。1体でも動いていればtrue。最後まで見つからなければfalse。
+
+### 穴埋め練習
+
+問題：`if (pMotion && pMotion->IsMoving()) return 【空欄】;`
+
+確認する結果：1体動く→true、全停止→false。
+
+<details>
+<summary>模範解答（考えてから開く）</summary>
+
+```cpp
+true
+```
+
+</details>
+
+## 11. 勝敗と敵追加
+
+`Source/Game/Scenes/SceneGameplay.cpp`（順番に追記 07/10｜正本 220～240 行）
+
+直前まで書いた同じcppの末尾に、以下を続けて書きます。
+
+```cpp
+void SceneGame::FinishTurn() {
+  ++m_completedShots;
+  bool bossAlive = false;
+  bool enemyAlive = false;
+  for (const auto& p : m_objects)
+  {
+    if (!p || !p->IsActive())
+      continue;
+    if (Role(*p, GameRole::Boss)) bossAlive = true;
+    if (Role(*p, GameRole::Enemy)) enemyAlive = true;
+  }
+
+  if (m_hasBoss && !bossAlive)
+    m_result = 1;
+  else if (!m_hasBoss && m_hadEnemies && !enemyAlive)
+    m_result = 1;
+  else if (m_turn.GetRemainingShots() == 0)
+    m_result = 2;
+  else if (m_completedShots % kWaveInterval == 0)
+    SpawnEnemy();
+}
+```
+
+### 上から読む
+
+手番終了数を増やす。ボスの生存・敵の生存を調べる。クリアを先に判断し、その次に0手ならゲームオーバー。3手ごとに敵追加。
+
+### 穴埋め練習
+
+問題：`else if (m_completedShots % kWaveInterval == 0) 【空欄】;`
+
+確認する結果：3手終了で1体追加、最後の手でボス撃破ならクリア。
+
+<details>
+<summary>模範解答（考えてから開く）</summary>
+
+```cpp
+SpawnEnemy()
+```
+
+</details>
+
+## 12. 敵を空いている場所に作る
+
+`Source/Game/Scenes/SceneGameplay.cpp`（順番に追記 08/10｜正本 241～286 行）
+
+直前まで書いた同じcppの末尾に、以下を続けて書きます。
+
+```cpp
+bool SceneGame::SpawnEnemy() {
+  // ステージの空き位置を決まった順で確認。重なっている場所には出さない。
+  auto p = make_unique<PrimitiveObject>(PrimitiveShape::Sphere);
+  ColliderConfig config;
+  config.role = GameRole::Enemy;
+  config.shape = ColliderShape::Sphere;
+  auto collider = make_unique<ColliderComponent>(p.get());
+  collider->Configure(config);
+  p->AddComponent(move(collider));
+  p->AddComponent(make_unique<BallMotionComponent>(p.get()));
+  p->AddComponent(make_unique<HealthComponent>(p.get()));
+  p->AddComponent(make_unique<ReflectionCounterComponent>(p.get()));
+  auto &t = p->GetTransform();
+  t.position[1] = 0.55f;
+  for (int z = -3; z <= 3; z += 2)
+    for (int x = -5; x <= 5; x += 2) {
+      t.position[0] = float(x);
+      t.position[2] = float(z);
+      bool free = true;
+      for (auto &other : m_objects)
+        if (other && other->IsActive()) {
+          Contact hit;
+          if (CollisionSystem::Detect(*p, *other, hit)) {
+            free = false;
+            break;
+          }
+        }
+      if (free) {
+        std::string name;
+        bool exists;
+        do {
+          name = "WaveEnemy_" + std::to_string(++m_spawnSerial);
+          exists = false;
+          for (auto &o : m_objects)
+            if (o && o->GetName() == name)
+              exists = true;
+        } while (exists);
+        p->SetName(name);
+        p->SetColor(XMFLOAT4(0, 1, 0, 1));
+        p->SaveInitialTransform();
+        m_objects.push_back(move(p));
+        return true;
+      }
+    }
+  return false;
+}
+```
+
+### 上から読む
+
+球のPrimitiveObjectを作り、必要な4Componentを追加する。候補位置を2重forで確認。
+他と当たる場所は使わない。空きがあれば重複しない名前を付けvectorへ追加。全て埋まっていればfalse。
+
+### 穴埋め練習
+
+問題：`m_objects.push_back(【空欄】);`
+
+確認する結果：候補が空なら1体追加、全て重なるなら追加しない。
+
+<details>
+<summary>模範解答（考えてから開く）</summary>
+
+```cpp
+move(p)
+```
+
+</details>
+
+## 13. HUDに渡す数値を集める
+
+`Source/Game/Scenes/SceneGameplay.cpp`（順番に追記 09/10｜正本 287～326 行）
+
+直前まで書いた同じcppの末尾に、以下を続けて書きます。
+
+```cpp
+void SceneGame::UpdateHUD() {
+  HudInput data;
+  data.remainingShots = m_turn.GetRemainingShots();
+  int untilWave = kWaveInterval - m_completedShots % kWaveInterval;
+  int shots = m_turn.GetRemainingShots();
+  if (m_turn.IsResolving())
+      ++shots;
+  if (m_result == 0 && shots > untilWave)
+      data.nextEnemyCount = 1;
+  vector<GameObject *> enemies;
+  float maxDrag = 3;
+  for (auto &p : m_objects)
+    if (p) {
+      if (Role(*p, GameRole::Boss)) {
+        if (auto *h = Enabled<HealthComponent>(*p)) {
+          data.bossHP = h->GetHP();
+          data.bossMaxHP = h->GetMaxHP();
+        }
+      }
+      if (p->IsActive() && Role(*p, GameRole::Enemy)) {
+        if (auto *h = Enabled<HealthComponent>(*p)) {
+          enemies.push_back(p.get());
+          data.enemyHPRatios.push_back(float(h->GetHP()) / h->GetMaxHP());
+        }
+      }
+      if (p->IsActive() && Role(*p, GameRole::Player)) {
+        data.playerPosition = Position(*p);
+        m_arrowY = p->GetTransform().position[1] + 0.6f;
+        if (auto *input = Enabled<PlayerInputComponent>(*p))
+          data.aim = input->GetAim();
+        if (auto *l = Enabled<PlayerLaunchComponent>(*p))
+          maxDrag = l->GetMaxDrag();
+      }
+    }
+  m_hud = HudPresenter::Build(data, maxDrag);
+  for (size_t i = 0; i < enemies.size(); ++i) {
+    auto c = m_hud.enemyColors[i];
+    enemies[i]->SetColor(XMFLOAT4(c.r, c.g, c.b, c.a));
+  }
+}
+```
+
+### 上から読む
+
+手数、次の敵数、ボスHP、敵HP割合、ドラッグ状態を集める。HudPresenterが表示用データを返す。同じ並びで敵に色を付ける。
+
+### 穴埋め練習
+
+問題：`m_hud = HudPresenter::Build(【空欄】, maxDrag);`
+
+確認する結果：手数・HPが変わると表示用数値が更新される。
+
+<details>
+<summary>模範解答（考えてから開く）</summary>
+
+```cpp
+data
+```
+
+</details>
+
+## 14. 矢印とHUDを描く
+
+`Source/Game/Scenes/SceneGameplay.cpp`（順番に追記 10/10｜正本 327～359 行）
+
+直前まで書いた同じcppの末尾に、以下を続けて書きます。
+
+```cpp
+void SceneGame::DrawGameplayHUD() {
+  if (!m_gameReady)
+    return;
+  if (m_hud.showArrow)
+  {
+    BoardVec2 start = m_hud.arrowStart;
+    BoardVec2 end = m_hud.arrowEnd;
+    float x = end.x - start.x;
+    float z = end.z - start.z;
+    float length = std::sqrt(x * x + z * z);
+    if (length > 0)
+    {
+      XMFLOAT4X4 identity;
+      XMStoreFloat4x4(&identity, XMMatrixIdentity());
+      Geometory::SetWorld(identity);
+      XMFLOAT4 color(0.2f, 0.8f, 1, 1);
+      float head = length * 0.4f;
+      if (head > 0.35f) head = 0.35f;
+      float ux = x / length;
+      float uz = z / length;
+      XMFLOAT3 tip(end.x, m_arrowY, end.z);
+      XMFLOAT3 left(end.x - head * ux + head * 0.5f * uz,
+                    m_arrowY, end.z - head * uz - head * 0.5f * ux);
+      XMFLOAT3 right(end.x - head * ux - head * 0.5f * uz,
+                     m_arrowY, end.z - head * uz + head * 0.5f * ux);
+      Geometory::AddLine(XMFLOAT3(start.x, m_arrowY, start.z), tip, color);
+      Geometory::AddLine(tip, left, color);
+      Geometory::AddLine(tip, right, color);
+      Geometory::DrawLines();
+    }
+  }
+  m_hudRenderer.Draw(m_hud, m_hasBoss, m_result);
+}
+```
+
+### 上から読む
+
+矢印が必要なら開始・終了と先端の左右を求め、3本の線を描く。
+最後にHudRendererへ表示データを渡す。DirectX行列部分は既存APIを使うだけでよい。
+
+### 穴埋め練習
+
+問題：`m_hudRenderer.Draw(m_hud, m_hasBoss, 【空欄】);`
+
+確認する結果：ドラッグ中に矢印、通常はHPバーと手数。
+
+<details>
+<summary>模範解答（考えてから開く）</summary>
+
+```cpp
+m_result
+```
+
+</details>
+
+**SceneGameplay.cppの完成：** 追記10/10まででファイル全体が完成します。穴埋めコードは追記しません。
+
+## 15. SceneGame.cppからゲーム処理を呼び出す
+
+既存ファイルの正本を省略せず掲載します。ゲーム初期化、Playの開始・終了、
+Update、Draw、Rによる再読み込みをつないでいます。既存Editor機能やカメラ処理は保持します。
+第20回の旧クリックテストを入れている場合は削除し、新版の相対ドラッグに置き換えます。
+OnResize・ExitPlayModeでBoardPointerをResetして中断します。
+
+`Source/Game/Scenes/SceneGame.cpp`（ファイル全文・省略なし）
+
+```cpp
+//========================================//
+//
+// SceneGame.cpp
+//
+// DebugEditorから命令を受け取って、
+// SceneEditActionsへ渡す。
+// 実行結果だけ受け取る。
+//
+//========================================//
+#include "SceneGame.h"
+
+#include "App/Defines.h"
+#include "Engine/Input/Input.h"
+#include "ThirdParty/nlohmann/json.hpp"
+
+#include "Engine/Graphics/DirectX/ShaderList.h"
+#include "Engine/Graphics/Geometory.h"
+
+#include "Engine/Camera/CameraDebug.h"
+#include "Engine/Camera/CameraPlay.h"
+
+#include "Game/Serialization/SceneSerializer.h"
+
+#include "Game/Objects/FbxObject.h"
+#include "Game/Objects/Goal.h"
+#include "Game/Objects/Ground.h"
+
+#include "Engine/Graphics/DirectX/DirectX.h"
+#include "Game/Components/BallMotionComponent.h"
+#include "Game/Components/ColliderComponent.h"
+#include "Game/Components/HealthComponent.h"
+#include "Game/Components/MoveComponent.h"
+#include "Game/Components/PlayerInputComponent.h"
+#include "Game/Components/PlayerLaunchComponent.h"
+#include "Game/Components/ReflectionCounterComponent.h"
+#include "Game/Objects/PrimitiveObject.h"
+#include "Game/Systems/DamageFormula.h"
+#include "Game/UI/HudPresenter.h"
+#include <Windows.h>
+#include <algorithm>
+#include <cmath>
+#include <string>
+
+#ifdef _DEBUG
+#include "Engine/Debug/DebugEditor.h"
+#include "imgui.h"
+#include "Engine/Scene/SceneRayPicker.h"
+#include "Game/Editor/SceneEditActions.h"
+#endif
+
+using namespace DirectX;
+using namespace std;
+
+// namespace はこのcppファイルの中だけで使用する関数をまとめる仕組み
+namespace {
+// ステージの保存先
+const char *const kStageFilePath = "Assets/Stages/Stage_Lesson19.json";
+} // namespace
+
+//========================================
+// コンストラクタ
+//========================================
+SceneGame::SceneGame()
+    : m_pCamera(nullptr), m_pPlayCamera(nullptr), m_showDebugGrid(true) {
+  //========================================
+  // Groundを生成
+  //========================================
+  unique_ptr<Ground> pGround(new Ground());
+
+  pGround->SetPos(0.0f, 0.0f, 0.0f);
+  pGround->SetScale(3.0f, 0.4f, 3.0f);
+
+  // 現在のTransformを初期状態として保存
+  pGround->SaveInitialTransform();
+
+  // GameObjectの配列に追加
+  m_objects.push_back(move(pGround));
+
+  //========================================
+  // Goalを生成する
+  //========================================
+  unique_ptr<Goal> pGoal(new Goal());
+
+  pGoal->SetPos(0.0f, 1.0f, 0.0f);
+  pGoal->SetScale(0.5f, 0.5f, 0.5f);
+
+  pGoal->SaveInitialTransform();
+
+  m_objects.push_back(move(pGoal));
+
+  //========================================
+  // カメラ
+  //========================================
+  // 編集用カメラはDebugのみ
+#ifdef _DEBUG
+  m_pCamera.reset(new CameraDebug());
+#endif
+
+  // Play用カメラはDebug・Release共通
+  m_pPlayCamera.reset(new CameraPlay());
+
+  LoadGameplayStage();
+  if (!m_hudRenderer.Initialize())
+    MessageBoxA(nullptr, "HUD texture creation failed.", "HUD Error",
+                MB_OK | MB_ICONERROR);
+#ifndef _DEBUG
+  ResetGameplay();
+#endif
+}
+
+//========================================
+// デストラクタ
+//========================================
+SceneGame::~SceneGame() = default;
+
+//========================================
+// 更新処理
+//========================================
+void SceneGame::Update() {
+  // 更新で進める時間
+  const float deltaTime = 1.0f / FPS;
+
+  // ゲームを更新するかどうか
+  bool shouldUpdateGame = true;
+
+#ifdef _DEBUG
+  //========================================
+  // F1でモード切り替え
+  //========================================
+  if (IsKeyTrigger(VK_F1)) {
+    if (m_isEditMode) {
+      // Edit -> Play
+      EnterPlayMode();
+    } else {
+      // Play -> Edit
+      ExitPlayMode();
+    }
+  }
+
+  // Edit Mode中はゲームを更新しない
+  shouldUpdateGame = !m_isEditMode;
+  UpdateColliderDebug();
+#endif
+
+  //========================================
+  // ゲームの更新処理
+  //========================================
+  if (shouldUpdateGame) {
+    if (IsKeyTrigger('R')) {
+#ifdef _DEBUG
+      ExitPlayMode();
+      EnterPlayMode();
+#else
+      if (LoadGameplayStage())
+        ResetGameplay();
+#endif
+    }
+    UpdateGameplay(deltaTime);
+  }
+
+  //========================================
+  // カメラ更新
+  //========================================
+#ifdef _DEBUG
+  if (m_isEditMode) {
+    // Edit Modeでは自由操作カメラ
+    m_pCamera->Update();
+  } else {
+    // Play Modeでは固定カメラ
+    m_pPlayCamera->Update();
+  }
+#else
+  // Releaseでは常にPlay専用カメラ
+  m_pPlayCamera->Update();
+#endif
+}
+
+//========================================
+// 描画処理
+//========================================
+void SceneGame::Draw() {
+  //========================================
+  // ライティング設定
+  //========================================
+  ShaderList::SetLight(XMFLOAT4(1.2f, 1.2f, 1.2f, 1.0f),
+                       XMFLOAT3(0.0f, -1.0f, 0.0f));
+
+  //========================================
+  // 使用するカメラを決定
+  //========================================
+  // 基本的にはPlay用カメラを使用
+  Camera *pRenderCamera = m_pPlayCamera.get();
+
+#ifdef _DEBUG
+  // Edit Modeの場合だけDebugカメラを使用
+  if (m_isEditMode) {
+    pRenderCamera = m_pCamera.get();
+  }
+#endif
+
+  //========================================
+  // カメラ行列の設定
+  //========================================
+  const XMFLOAT4X4 view = pRenderCamera->GetViewMatrix();
+  const XMFLOAT4X4 projection = pRenderCamera->GetProjectionMatrix();
+
+  Geometory::SetView(view);
+  Geometory::SetProjection(projection);
+
+  // FBXオブジェクトにもカメラ行列を設定
+  FbxObject::SetCameraMatrices(view, projection);
+
+  //========================================
+  // すべてのGameOjbectを描画
+  //========================================
+  for (auto &pObject : m_objects) {
+    if (pObject && pObject->IsActive())
+      pObject->Draw();
+  }
+
+  //========================================
+  // Edit Modeでのみグリッドを描画
+  //========================================
+#ifdef _DEBUG
+  if (m_isEditMode && m_showDebugGrid) {
+    DrawDebugGrid();
+  }
+#endif
+
+#ifdef _DEBUG
+  // モードに関係なく表示する（Debugビルド限定）。
+  DrawColliderDebugPanel();
+  DrawColliderDebug();
+  if (m_isEditMode)
+    DrawEditor();
+  else
+    DrawGameplayHUD();
+#else
+  DrawGameplayHUD();
+#endif
+}
+
+#ifdef _DEBUG
+//========================================
+// Edit Modeのエディタ処理
+//========================================
+void SceneGame::DrawEditor() {
+  //========================================
+  // 3D画面内でのオブジェクト選択
+  //========================================
+  float mouseX = 0.0f;
+  float mouseY = 0.0f;
+  float viewportWidth = 0.0f;
+  float viewportHeight = 0.0f;
+
+  // 3D画面が左クリックされたか確認
+  if (DebugEditor::TryGetSceneClick(mouseX, mouseY, viewportWidth,
+                                    viewportHeight)) {
+    // Raycastでオブジェクトを探す
+    int selectedIndex = SceneRayPicker::Pick(
+        m_objects, *m_pCamera, mouseX, mouseY, viewportWidth, viewportHeight);
+
+    // オブジェクトに当たった場合だけ選択
+    if (selectedIndex >= 0) {
+      DebugEditor::SetSelectedObjectIndex(selectedIndex);
+    }
+  }
+
+  //========================================
+  // UIから命令を受け取る
+  //========================================
+  EditorCommand command = DebugEditor::DrawScene(m_objects, m_showDebugGrid);
+
+  //========================================
+  // 命令を実行する
+  //========================================
+  SceneEditResult result = SceneEditActions::Execute(
+      command, m_objects, *m_pPlayCamera, kStageFilePath);
+
+  //========================================
+  // 実行結果を反映する
+  //========================================
+  if (result.selectionChanged) {
+    DebugEditor::SetSelectedObjectIndex(result.selectedIndex);
+  }
+
+  //========================================
+  // エラーがあれば表示
+  //========================================
+  if (!result.error.empty()) {
+    MessageBoxA(nullptr, result.error.c_str(), "Scene Editor Error",
+                MB_OK | MB_ICONERROR);
+  }
+
+  //========================================
+  // Playカメラ設定
+  //========================================
+  DebugEditor::DrawPlayCamera(*m_pPlayCamera, *m_pCamera);
+}
+#endif
+
+#ifdef _DEBUG
+// 物理ステップの回数に関係なく、1フレームに1回だけ色の残り時間を減らす。
+void SceneGame::UpdateColliderDebug()
+{
+    for (auto& pObject : m_objects)
+    {
+        if (!pObject)
+            continue;
+        auto* pCollider = pObject->GetComponent<ColliderComponent>();
+        if (pCollider)
+            pCollider->UpdateDebugHit();
+    }
+}
+
+void SceneGame::DrawColliderDebugPanel()
+{
+    if (!ImGui::GetCurrentContext())
+        return;
+
+    float centerX = ImGui::GetIO().DisplaySize.x * 0.5f;
+    ImGui::SetNextWindowPos(ImVec2(centerX, 12.0f), ImGuiCond_FirstUseEver,
+                            ImVec2(0.5f, 0.0f));
+    if (ImGui::Begin("Collider Debug", nullptr,
+                     ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse))
+    {
+        ImGui::Checkbox("Show Colliders", &m_bShowColliders);
+        ImGui::TextColored(ImVec4(0.1f, 0.65f, 1.0f, 1.0f), "Player");
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "Enemy");
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(0.8f, 0.3f, 1.0f, 1.0f), "Boss");
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.15f, 1.0f), "Wall");
+        ImGui::TextUnformatted("White = Hit (9 frames)");
+    }
+    ImGui::End();
+}
+
+void SceneGame::DrawColliderDebug()
+{
+    if (!m_bShowColliders)
+        return;
+
+    // 深度とブレンドの元の設定を保存しておく。
+    ID3D11DepthStencilState* pDepth = nullptr;
+    UINT stencil = 0;
+    ID3D11BlendState* pBlend = nullptr;
+    FLOAT blendFactor[4] = {};
+    UINT sampleMask = 0;
+    GetContext()->OMGetDepthStencilState(&pDepth, &stencil);
+    GetContext()->OMGetBlendState(&pBlend, blendFactor, &sampleMask);
+
+    // モデルに隠れず、半透明で線を描く。
+    SetDepthTest(false);
+    SetBlendMode(BLEND_ALPHA);
+    for (auto& pObject : m_objects)
+    {
+        if (!pObject || !pObject->IsActive())
+            continue;
+        auto* pCollider = pObject->GetComponent<ColliderComponent>();
+        if (pCollider)
+            pCollider->DrawDebug();
+    }
+
+    // 後から描くHUDなどに影響させない。
+    GetContext()->OMSetDepthStencilState(pDepth, stencil);
+    GetContext()->OMSetBlendState(pBlend, blendFactor, sampleMask);
+    if (pDepth)
+        pDepth->Release();
+    if (pBlend)
+        pBlend->Release();
+}
+#endif
+
+void SceneGame::OnResize(unsigned int width, unsigned int height) {
+  if (width == 0 || height == 0)
+    return;
+
+  m_boardPointer.Reset();
+
+  // 新しい画面の縦横比
+  const float aspect = static_cast<float>(width) / static_cast<float>(height);
+
+  //========================================
+  // Edit用カメラ
+  //========================================
+  if (m_pCamera) {
+    m_pCamera->SetAspectRatio(aspect);
+  }
+
+  //========================================
+  // Play用カメラ
+  //========================================
+  if (m_pPlayCamera) {
+    m_pPlayCamera->SetAspectRatio(aspect);
+  }
+}
+
+//========================================
+// グリッド描画処理
+//========================================
+void SceneGame::DrawDebugGrid() {
+#ifdef _DEBUG
+  const int gridCount = 10;
+  const float gridSize = 1.0f;
+  const float extent = gridCount * gridSize;
+
+  const XMFLOAT4 gridColor(0.5f, 0.5f, 0.5f, 1.0f);
+
+  // ｘ方向とｚ方向にグリッドを生成
+  for (int i = -gridCount; i <= gridCount; i++) {
+    // 中央線はｘｙｚ軸と重なるので描画しない
+    if (i == 0)
+      continue;
+
+    float offset = i * gridSize;
+
+    // ｚ方向の線
+    Geometory::AddLine(XMFLOAT3(offset, 0, -extent),
+                       XMFLOAT3(offset, 0, extent), gridColor);
+
+    // ｘ方向の線
+    Geometory::AddLine(XMFLOAT3(-extent, 0, offset),
+                       XMFLOAT3(extent, 0, offset), gridColor);
+  }
+
+  // ｘ軸：赤
+  Geometory::AddLine(XMFLOAT3(-extent, 0, 0), XMFLOAT3(extent, 0, 0),
+                     XMFLOAT4(1, 0, 0, 1));
+
+  // ｙ軸：緑
+  Geometory::AddLine(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 5, 0),
+                     XMFLOAT4(0, 1, 0, 1));
+
+  // ｚ軸：青
+  Geometory::AddLine(XMFLOAT3(0, 0, -extent), XMFLOAT3(0, 0, extent),
+                     XMFLOAT4(0, 0, 1, 1));
+
+  Geometory::DrawLines();
+#endif
+}
+
+//========================================
+// Play Modeを開始する処理
+//========================================
+#ifdef _DEBUG
+void SceneGame::EnterPlayMode() {
+  // すでにPlay Modeなら何もしない
+  if (!m_isEditMode)
+    return;
+
+  //========================================
+  // Play用のオブジェクトを作る
+  //========================================
+  vector<unique_ptr<GameObject>> playObjects;
+
+  // vectorにどれぐらい要素を入れるかが分かっている場合、
+  // reserve で、あらかじめ必要な容量を確保する
+  playObjects.reserve(m_objects.size());
+
+  for (const auto &pObject : m_objects) {
+    if (!pObject) {
+      MessageBoxA(nullptr, "Null GameObject was found.", "Play Mode Error",
+                  MB_OK | MB_ICONERROR);
+      return;
+    }
+
+    // Cloneで別のオブジェクトを生成
+    unique_ptr<GameObject> pClone = pObject->Clone();
+
+    // 複製失敗時
+    if (!pClone) {
+      MessageBoxA(nullptr, "Failed to clone GameObject.", "Play Mode Error",
+                  MB_OK | MB_ICONERROR);
+      return;
+    }
+
+    playObjects.push_back(move(pClone));
+  }
+
+  //========================================
+  // 元の編集オブジェクトを保管
+  //========================================
+  m_editObjects.swap(m_objects);
+
+  //========================================
+  // Play用の複製へ切り替える
+  //========================================
+  m_objects.swap(playObjects);
+
+  // Play Modeへ変更
+  m_isEditMode = false;
+  ResetGameplay();
+}
+
+//========================================
+// Play Modeを終了する処理
+//========================================
+void SceneGame::ExitPlayMode() {
+  // すでにExit Modeなら何もしない
+  if (m_isEditMode)
+    return;
+
+  //========================================
+  // 編集用オブジェクトを復元
+  //========================================
+  m_objects.swap(m_editObjects);
+
+  //========================================
+  // Play用のオブジェクトを破棄
+  //========================================
+  m_boardPointer.Reset();
+  m_collision.Reset();
+  m_editObjects.clear();
+  m_gameReady = false;
+
+  // Edit Modeへ変更
+  m_isEditMode = true;
+}
+#endif
+```
+
+## 16. 動作確認用ステージを用意する
+
+`HEW_213/Assets/Stages/Stage_Lesson19.json` を新規作成します。
+元のStage01.jsonは変更しません。以下が正本のJSON全文です。各Componentの登録が済んでいる必要があります。
+
+`Assets/Stages/Stage_Lesson19.json`（ファイル全文・省略なし）
+
+```json
+{
+    "objects": [
+        {
+            "color": [
+                0.7473309636116028,
+                0.5533075332641602,
+                0.31116625666618347,
+                1.0
+            ],
+            "components": [],
+            "name": "Ground",
+            "transform": {
+                "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    15.0,
+                    0.009999999776482582,
+                    10.0
+                ]
+            },
+            "type": "Ground"
+        },
+        {
+            "color": [
+                0.7829181551933289,
+                0.7829181551933289,
+                0.7829181551933289,
+                1.0
+            ],
+            "components": [
+                {
+                    "type": "Collider",
+                    "enabled": true,
+                    "role": 3,
+                    "shape": 1,
+                    "radius": 0.5,
+                    "halfExtent": [
+                        7.5,
+                        0.12
+                    ],
+
+                    "restitution": 1
+                }
+            ],
+            "name": "Wall+Z_xRot-90",
+            "transform": {
+                "position": [
+                    0.0,
+                    0.5,
+                    5.0
+                ],
+                "rotation": [
+                    -90.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    15.0,
+                    0.009999999776482582,
+                    1.0
+                ]
+            },
+            "type": "Ground"
+        },
+        {
+            "color": [
+                0.7843137383460999,
+                0.7843137383460999,
+                0.7843137383460999,
+                1.0
+            ],
+            "components": [
+                {
+                    "type": "Collider",
+                    "enabled": true,
+                    "role": 3,
+                    "shape": 1,
+                    "radius": 0.5,
+                    "halfExtent": [
+                        7.5,
+                        0.12
+                    ],
+
+                    "restitution": 1
+                }
+            ],
+            "name": "Wall-Z_xRot+90",
+            "transform": {
+                "position": [
+                    0.0,
+                    0.5,
+                    -5.0
+                ],
+                "rotation": [
+                    90.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    15.0,
+                    0.009999999776482582,
+                    1.0
+                ]
+            },
+            "type": "Ground"
+        },
+        {
+            "color": [
+                0.7843137383460999,
+                0.7843137383460999,
+                0.7843137383460999,
+                1.0
+            ],
+            "components": [
+                {
+                    "type": "Collider",
+                    "enabled": true,
+                    "role": 3,
+                    "shape": 1,
+                    "radius": 0.5,
+                    "halfExtent": [
+                        0.12,
+                        5
+                    ],
+
+                    "restitution": 1
+                }
+            ],
+            "name": "Wall+X_xRot+180_zRot+90",
+            "transform": {
+                "position": [
+                    7.5,
+                    0.5,
+                    0.0
+                ],
+                "rotation": [
+                    180.0,
+                    0.0,
+                    90.0
+                ],
+                "scale": [
+                    1.0,
+                    0.009999999776482582,
+                    10.0
+                ]
+            },
+            "type": "Ground"
+        },
+        {
+            "color": [
+                0.7843137383460999,
+                0.7843137383460999,
+                0.7843137383460999,
+                1.0
+            ],
+            "components": [
+                {
+                    "type": "Collider",
+                    "enabled": true,
+                    "role": 3,
+                    "shape": 1,
+                    "radius": 0.5,
+                    "halfExtent": [
+                        0.12,
+                        5
+                    ],
+
+                    "restitution": 1
+                }
+            ],
+            "name": "Wall-X_xRot+180_zRot-90",
+            "transform": {
+                "position": [
+                    -7.5,
+                    0.5,
+                    0.0
+                ],
+                "rotation": [
+                    180.0,
+                    0.0,
+                    -90.0
+                ],
+                "scale": [
+                    1.0,
+                    0.009999999776482582,
+                    10.0
+                ]
+            },
+            "type": "Ground"
+        },
+        {
+            "color": [
+                0.0,
+                1.0,
+                0.0,
+                1.0
+            ],
+            "components": [
+                {
+                    "type": "Collider",
+                    "enabled": true,
+                    "role": 1,
+                    "shape": 0,
+                    "radius": 0.5,
+                    "halfExtent": [
+                        0.5,
+                        0.5
+                    ],
+
+                    "restitution": 1
+                },
+                {
+                    "type": "BallMotion",
+                    "enabled": true,
+                    "deceleration": 4,
+                    "stopSpeed": 0.05,
+                    "maxSpeed": 10
+                },
+                {
+                    "type": "ReflectionCounter",
+                    "enabled": true
+                },
+                {
+                    "type": "Health",
+                    "enabled": true,
+                    "maxHP": 10
+                }
+            ],
+            "name": "Enemy1",
+            "shape": "Sphere",
+            "transform": {
+                "position": [
+                    2.0,
+                    0.550000011920929,
+                    2.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "type": "Primitive"
+        },
+        {
+            "color": [
+                0.0,
+                1.0,
+                0.0,
+                1.0
+            ],
+            "components": [
+                {
+                    "type": "Collider",
+                    "enabled": true,
+                    "role": 1,
+                    "shape": 0,
+                    "radius": 0.5,
+                    "halfExtent": [
+                        0.5,
+                        0.5
+                    ],
+
+                    "restitution": 1
+                },
+                {
+                    "type": "BallMotion",
+                    "enabled": true,
+                    "deceleration": 4,
+                    "stopSpeed": 0.05,
+                    "maxSpeed": 10
+                },
+                {
+                    "type": "ReflectionCounter",
+                    "enabled": true
+                },
+                {
+                    "type": "Health",
+                    "enabled": true,
+                    "maxHP": 10
+                }
+            ],
+            "name": "Enemy2",
+            "shape": "Sphere",
+            "transform": {
+                "position": [
+                    -0.699999988079071,
+                    0.550000011920929,
+                    -3.5999999046325684
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "type": "Primitive"
+        },
+        {
+            "color": [
+                0.43772244453430176,
+                0.43772244453430176,
+                0.43772244453430176,
+                1.0
+            ],
+            "components": [
+                {
+                    "type": "Collider",
+                    "enabled": true,
+                    "role": 3,
+                    "shape": 1,
+                    "radius": 0.5,
+                    "halfExtent": [
+                        0.5,
+                        0.5
+                    ],
+
+                    "restitution": 1
+                }
+            ],
+            "name": "Box",
+            "shape": "Box",
+            "transform": {
+                "position": [
+                    -1.399999976158142,
+                    0.5,
+                    2.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "type": "Primitive"
+        },
+        {
+            "color": [
+                0.43772244453430176,
+                0.43772244453430176,
+                0.43772244453430176,
+                1.0
+            ],
+            "components": [
+                {
+                    "type": "Collider",
+                    "enabled": true,
+                    "role": 3,
+                    "shape": 1,
+                    "radius": 0.5,
+                    "halfExtent": [
+                        0.5,
+                        0.5
+                    ],
+
+                    "restitution": 1
+                }
+            ],
+            "name": "Box_Copy",
+            "shape": "Box",
+            "transform": {
+                "position": [
+                    0.44999998807907104,
+                    0.5,
+                    -0.949999988079071
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "type": "Primitive"
+        },
+        {
+            "color": [
+                0.43772244453430176,
+                0.43772244453430176,
+                0.43772244453430176,
+                1.0
+            ],
+            "components": [
+                {
+                    "type": "Collider",
+                    "enabled": true,
+                    "role": 3,
+                    "shape": 1,
+                    "radius": 0.5,
+                    "halfExtent": [
+                        0.5,
+                        0.5
+                    ],
+
+                    "restitution": 1
+                }
+            ],
+            "name": "Box_Copy_Copy",
+            "shape": "Box",
+            "transform": {
+                "position": [
+                    -5.800000190734863,
+                    0.5,
+                    -3.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "type": "Primitive"
+        },
+        {
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "components": [
+                {
+                    "type": "Collider",
+                    "enabled": true,
+                    "role": 2,
+                    "shape": 0,
+                    "radius": 1,
+                    "halfExtent": [
+                        0.5,
+                        0.5
+                    ],
+
+                    "restitution": 1
+                },
+                {
+                    "type": "Health",
+                    "enabled": true,
+                    "maxHP": 10
+                }
+            ],
+            "modelPath": "Assets/Model/KingSlime.fbx",
+            "name": "KingSlime",
+            "transform": {
+                "position": [
+                    5.5,
+                    0.10000000149011612,
+                    -3.0
+                ],
+                "rotation": [
+                    0.0,
+                    120.0,
+                    0.0
+                ],
+                "scale": [
+                    0.30000001192092896,
+                    0.30000001192092896,
+                    0.30000001192092896
+                ]
+            },
+            "type": "Fbx"
+        },
+        {
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "components": [
+                {
+                    "type": "Collider",
+                    "enabled": true,
+                    "role": 0,
+                    "shape": 0,
+                    "radius": 0.5,
+                    "halfExtent": [
+                        0.5,
+                        0.5
+                    ],
+
+                    "restitution": 1
+                },
+                {
+                    "type": "BallMotion",
+                    "enabled": true,
+                    "deceleration": 4,
+                    "stopSpeed": 0.05,
+                    "maxSpeed": 10
+                },
+                {
+                    "type": "ReflectionCounter",
+                    "enabled": true
+                },
+                {
+                    "type": "PlayerInput",
+                    "enabled": true
+                },
+                {
+                    "type": "PlayerLaunch",
+                    "enabled": true,
+                    "minDrag": 0.1,
+                    "maxDrag": 3,
+                    "maxSpeed": 10
+                }
+            ],
+            "modelPath": "Assets/Model/MainCharacter_01.fbx",
+            "name": "MainCharacter_01",
+            "transform": {
+                "position": [
+                    -5.0,
+                    0.550000011920929,
+                    1.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "type": "Fbx"
+        }
+    ],
+    "playCamera": {
+        "look": [
+            0.0,
+            0.0,
+            -0.30000001192092896
+        ],
+        "position": [
+            0.0,
+            10.0,
+            -2.0
+        ]
+    },
+    "version": 1
+}
+```
+
+## 17. Visual Studioのプロジェクト登録と動作確認
+
+Visual Studioのソリューションエクスプローラーで、
+プロジェクトの該当フィルターを選び「追加 → 既存の項目」で物理フォルダに作ったh/cppを登録します。
+既に登録したものは追加しません。プロジェクトのファイル名は `HEW_213.vcxproj` です。
+次のファイルが登録されているか確認します。cppはDebug/x64とRelease/x64でビルド対象にします。既存のImGuiのビルド条件は変更しません。
+
+- `Source/Game/Systems/GameTypes.h`
+- `Source/Game/Components/BallMotionComponent.h`
+- `Source/Game/Components/BallMotionComponent.cpp`
+- `Source/Game/Components/PlayerInputComponent.h`
+- `Source/Game/Components/PlayerInputComponent.cpp`
+- `Source/Game/Components/PlayerLaunchComponent.h`
+- `Source/Game/Components/PlayerLaunchComponent.cpp`
+- `Source/Game/Components/ColliderComponent.h`
+- `Source/Game/Components/ColliderComponent.cpp`
+- `Source/Game/Components/ReflectionCounterComponent.h`
+- `Source/Game/Components/ReflectionCounterComponent.cpp`
+- `Source/Game/Components/HealthComponent.h`
+- `Source/Game/Components/HealthComponent.cpp`
+- `Source/Game/Components/ComponentRegistry.h`
+- `Source/Game/Components/ComponentRegistry.cpp`
+- `Source/Game/Systems/CollisionSystem.h`
+- `Source/Game/Systems/CollisionSystem.cpp`
+- `Source/Game/Systems/TurnSystem.h`
+- `Source/Game/Systems/TurnSystem.cpp`
+- `Source/Game/Systems/DamageFormula.h`
+- `Source/Game/Systems/DamageFormula.cpp`
+- `Source/Game/UI/HudPresenter.h`
+- `Source/Game/UI/HudPresenter.cpp`
+- `Source/Game/UI/HudRenderer.h`
+- `Source/Game/UI/HudRenderer.cpp`
+- `Source/App/Startup.cpp`（既存ファイルへ変更追加、登録し直す必要なし）
+- `Source/Game/Input/BoardPointer.h`
+- `Source/Game/Input/BoardPointer.cpp`
+- `Source/Game/Scenes/SceneGame.h`
+- `Source/Game/Scenes/SceneGame.cpp`
+- `Source/Game/Scenes/SceneGameplay.cpp`
+
+1. Debug/x64でリビルド。全担当者のcppが入っていることを確認。
+2. F1でPlay。青い球をドラッグして離し、発射・手数・壁反射・敵への連鎖を確認。
+3. HPが減り、敵の色が変わることを確認。
+4. 球が停止したら次の発射が可能になることを確認。Rでリスタート。
+5. F1でEditに戻り、従来のEditorが使用できることを確認する。Release/x64でも確認。
+
+## 補足
+
+- Enabled<T> は「Componentを探し、有効か確認する」補助関数。テンプレートは今までのGameObject::GetComponentと同様。
+- `unique_ptr` 管理は既存エンジンに従う。moveで所有権をvectorに移す。
+- `SceneGame.cpp` のモード切替・Editor部分を移植し直す必要はない。第15章に掲載した正本を参照し、ゲーム部分とのつなぎのみ採用する。
+- DirectXの描画処理・BoardPointerは配布する基盤。無理に初学者向けに行列や描画状態の処理を消さない。

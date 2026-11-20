@@ -5,20 +5,20 @@
 
 class ReflectionCounterComponent : public Component {
 public:
-    explicit ReflectionCounterComponent(GameObject* owner);
+    explicit ReflectionCounterComponent(GameObject *pOwner);
 
-    const char* GetTypeId() const override
+    const char *GetTypeId() const override
     { 
         return "ReflectionCounter";
     }
 
-    const char* GetTypeName() const override
+    const char *GetTypeName() const override
     { 
         return "ReflectionCounter";
     }
 
     std::unique_ptr<Component> Clone(
-        GameObject* pNewOwner) const override;
+        GameObject *pNewOwner) const override;
 
 #ifdef _DEBUG
     void DrawDebugInspector() override;

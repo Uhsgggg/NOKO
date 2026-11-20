@@ -1,0 +1,568 @@
+# 02｜栗本：操作・発射・移動・手数
+
+**書き方のルール：この資料だけで担当コードを書き終えられます。**
+
+- 「ファイル全文」は、そのファイルを1つ完成させるコードです。
+　共通hがすでにある場合は照合するだけで、二重に追記しません。
+- 「順番に追記」は、同じcppの末尾へ番号順に書くコードです。
+　最初のブロックから最後まで書けば完成します。
+　途中でファイルを閉じたり別のクラスを作ったりする必要はありません。
+- 「穴埋め練習」「模範解答」は理解確認用です。完成コードに追加しません。
+- 自分の担当以外の処理は、共通hの宣言を使います。
+　他の担当のcppが未完成なら、全体のリンク／実行は全員の実装後に確認します。
+- Visual Studioで既存のファイルがあるか確認し、
+　ない場合は指定された物理フォルダに新規作成してプロジェクトへ登録します。
+　日本語コメント付きの新規ファイルはUTF-8 BOM付きで保存すると安全です。
+
+
+## 1. TurnSystem（残り手数）
+
+**先にhを確認・作成**（共有済みなら書き直さない）
+
+`Source/Game/Systems/TurnSystem.h`（ファイル全文・省略なし）
+
+```cpp
+#pragma once
+class TurnSystem
+{
+  public:
+    void Reset(int shots);
+    bool CanLaunch() const;
+    bool TryConsumeShot();             // 成功時だけ残数-1、Resolvingへ
+    bool EndIfStopped(bool anyMoving); // 1ターン終了時だけtrue
+    int GetRemainingShots() const;
+    bool IsResolving() const;
+
+  private:
+    int m_remaining = 0;
+    bool m_resolving = false;
+};
+```
+
+**次にcppを作成**
+
+`Source/Game/Systems/TurnSystem.cpp`（ファイル全文・省略なし）
+
+```cpp
+#include "TurnSystem.h"
+void TurnSystem::Reset(int shots)
+{
+    if (shots < 0)
+        shots = 0;
+    m_remaining = shots;
+    m_resolving = false;
+}
+bool TurnSystem::CanLaunch() const
+{
+    return m_remaining > 0 && !m_resolving;
+}
+bool TurnSystem::TryConsumeShot()
+{
+    if (!CanLaunch())
+        return false;
+    --m_remaining;
+    m_resolving = true;
+    return true;
+}
+bool TurnSystem::EndIfStopped(bool anyMoving)
+{
+    if (!m_resolving || anyMoving)
+        return false;
+    m_resolving = false;
+    return true;
+}
+int TurnSystem::GetRemainingShots() const
+{
+    return m_remaining;
+}
+bool TurnSystem::IsResolving() const
+{
+    return m_resolving;
+}
+```
+
+### 上から読む
+
+- Resetは手数を設定して発射中フラグをfalseにする。
+- CanLaunchは残り手数が1以上で発射中ではない場合にtrue。
+- TryConsumeShotは発射できれば手数を1減らし、発射中にする。
+- EndIfStoppedは全球停止で発射中をfalseにする。次の発射ができる。
+- 残り0手でも最後の球が動いている間はまだゲームオーバーにしない。
+
+### 穴埋め練習
+
+問題：`--m_remaining; 【空欄】;` 発射中にする。
+
+確認する結果：Reset(2) → 発射成功で1、動いている間は発射不可。停止後は次の発射が可能。
+
+<details>
+<summary>模範解答（考えてから開く）</summary>
+
+```cpp
+m_resolving = true;
+```
+
+</details>
+
+## 2. BallMotionComponent（速度と位置）
+
+**先にhを確認・作成**（共有済みなら書き直さない）
+
+`Source/Game/Components/BallMotionComponent.h`（ファイル全文・省略なし）
+
+```cpp
+#pragma once
+#include "Engine/Scene/Component.h"
+#include "Game/Systems/GameTypes.h"
+
+class BallMotionComponent : public Component
+{
+  public:
+    explicit BallMotionComponent(GameObject *pOwner);
+    const char *GetTypeId() const override
+    {
+        return "BallMotion";
+    }
+    const char *GetTypeName() const override
+    {
+        return "BallMotion";
+    }
+    std::unique_ptr<Component> Clone(GameObject *pNewOwner) const override;
+#ifdef _DEBUG
+    void DrawDebugInspector() override;
+#endif
+    void Update(float dt) override;
+    void SetVelocity(BoardVec2 v);
+    BoardVec2 GetVelocity() const;
+    bool IsMoving() const;
+    void Stop();
+    void Configure(float deceleration, float stopSpeed, float maxSpeed);
+    float GetDeceleration() const;
+    float GetStopSpeed() const;
+    float GetMaxSpeed() const;
+
+  private:
+    BoardVec2 m_velocity;
+    float m_deceleration = 4.0f;
+    float m_stopSpeed = 0.05f;
+    float m_maxSpeed = 10.0f;
+};
+```
+
+**次にcppを作成**
+
+`Source/Game/Components/BallMotionComponent.cpp`（ファイル全文・省略なし）
+
+```cpp
+#include "BallMotionComponent.h"
+#include "Engine/Scene/GameObject.h"
+#include <cmath>
+#ifdef _DEBUG
+#include "imgui.h"
+#endif
+
+// 速度はXZ平面だけ。Clone時には設定のみコピーする。
+BallMotionComponent::BallMotionComponent(GameObject *pOwner) : Component(pOwner)
+{
+}
+void BallMotionComponent::Configure(float deceleration, float stopSpeed, float maxSpeed)
+{
+    // 設定が間違っていたら、今の設定を残す。
+    if (!std::isfinite(deceleration) || !std::isfinite(stopSpeed) || !std::isfinite(maxSpeed))
+        return;
+    if (deceleration <= 0 || stopSpeed < 0 || maxSpeed <= stopSpeed)
+        return;
+    m_deceleration = deceleration;
+    m_stopSpeed = stopSpeed;
+    m_maxSpeed = maxSpeed;
+    SetVelocity(m_velocity);
+}
+void BallMotionComponent::SetVelocity(BoardVec2 v)
+{
+    float speed = std::sqrt(v.x * v.x + v.z * v.z);
+    if (!std::isfinite(speed))
+        return;
+    if (speed <= m_stopSpeed)
+    {
+        Stop();
+        return;
+    }
+    if (speed > m_maxSpeed)
+    {
+        v.x = v.x / speed * m_maxSpeed;
+        v.z = v.z / speed * m_maxSpeed;
+    }
+    m_velocity = v;
+}
+BoardVec2 BallMotionComponent::GetVelocity() const
+{
+    return m_velocity;
+}
+bool BallMotionComponent::IsMoving() const
+{
+    return m_velocity.x != 0 || m_velocity.z != 0;
+}
+void BallMotionComponent::Stop()
+{
+    m_velocity = {};
+}
+float BallMotionComponent::GetDeceleration() const
+{
+    return m_deceleration;
+}
+float BallMotionComponent::GetStopSpeed() const
+{
+    return m_stopSpeed;
+}
+float BallMotionComponent::GetMaxSpeed() const
+{
+    return m_maxSpeed;
+}
+// 1. 位置を進める → 2. 速さだけを小さくする → 3. 停止判定。
+void BallMotionComponent::Update(float dt)
+{
+    if (!m_pOwner || !IsMoving() || !std::isfinite(dt) || dt <= 0)
+        return;
+
+    Transform& t = m_pOwner->GetTransform();
+    t.position[0] += m_velocity.x * dt;
+    t.position[2] += m_velocity.z * dt;
+
+    float speed = std::sqrt(m_velocity.x * m_velocity.x + m_velocity.z * m_velocity.z);
+    float nextSpeed = speed - m_deceleration * dt;
+    if (nextSpeed <= m_stopSpeed)
+    {
+        Stop();
+        return;
+    }
+    // 向きを変えずに速さだけ減らす。
+    m_velocity.x = m_velocity.x / speed * nextSpeed;
+    m_velocity.z = m_velocity.z / speed * nextSpeed;
+}
+std::unique_ptr<Component> BallMotionComponent::Clone(GameObject *pNewOwner) const
+{
+    auto pCopy = std::make_unique<BallMotionComponent>(pNewOwner);
+    pCopy->Configure(m_deceleration, m_stopSpeed, m_maxSpeed);
+    pCopy->SetEnabled(IsEnabled());
+    return pCopy;
+}
+#ifdef _DEBUG
+void BallMotionComponent::DrawDebugInspector()
+{
+    float d = m_deceleration;
+    float s = m_stopSpeed;
+    float m = m_maxSpeed;
+    ImGui::DragFloat("Deceleration", &d, 0.1f, 0.01f, 100.0f);
+    ImGui::DragFloat("Stop speed", &s, 0.01f, 0.0f, 10.0f);
+    ImGui::DragFloat("Max speed", &m, 0.1f, 0.01f, 100.0f);
+    Configure(d, s, m);
+    ImGui::Text("Velocity: %.2f, %.2f", m_velocity.x, m_velocity.z);
+}
+#endif
+```
+
+### 上から読む
+
+- SetVelocity：XとZの速度から速さを求める。遅すぎれば停止、速すぎれば上限に直す。
+- GetVelocityは現在速度。IsMovingはXかZの速度が0でないか。Stopは両方0。
+- Update：座標に速度×経過秒数を加える。Yは変えない。
+- `nextSpeed` は現在の速さから減速分を引いた値。停止速度以下ならStop。
+- 速度 / speed で方向だけになり、nextSpeedを掛けることで向きはそのまま速さだけ減らす。
+- Configureは設定値を確認して保存する。Cloneは速度を引き継がず、設定だけ引き継ぐ。Inspectorは完成例を使う。
+
+### 穴埋め練習
+
+問題：`t.position[0] += 【空欄】;` X方向に移動する。
+
+確認する結果：速度(4,0)、dt=0.5、減速4なら位置+2、次の速度は(2,0)、さらに更新すると停止。
+
+<details>
+<summary>模範解答（考えてから開く）</summary>
+
+```cpp
+m_velocity.x * dt
+```
+
+</details>
+
+## 3. PlayerInputComponent（ドラッグを記録）
+
+最新版では `hitPlayer` を削除。変更するのはSampleの開始条件だけ。
+PlayerLaunch・BallMotion・TurnSystem・PlayerInputComponent.hは従来のコードでよい。
+WinAPI/Raw Inputの処理は波多野担当なので、栗本はPointerFrameを受け取るだけ。
+
+**先にhを確認・作成**（共有済みなら書き直さない）
+
+`Source/Game/Components/PlayerInputComponent.h`（ファイル全文・省略なし）
+
+```cpp
+#pragma once
+#include "Engine/Scene/Component.h"
+#include "Game/Systems/GameTypes.h"
+
+class PlayerInputComponent : public Component
+{
+  public:
+    explicit PlayerInputComponent(GameObject *pOwner);
+    const char *GetTypeId() const override
+    {
+        return "PlayerInput";
+    }
+    const char *GetTypeName() const override
+    {
+        return "PlayerInput";
+    }
+    std::unique_ptr<Component> Clone(GameObject *pNewOwner) const override;
+#ifdef _DEBUG
+    void DrawDebugInspector() override;
+#endif
+    void Sample(const PointerFrame &frame, bool canAim);
+    AimState GetAim() const;
+    void Cancel();
+
+  private:
+    AimState m_aim;
+};
+```
+
+**次にcppを作成**
+
+`Source/Game/Components/PlayerInputComponent.cpp`（ファイル全文・省略なし）
+
+```cpp
+#include "PlayerInputComponent.h"
+#include "Engine/Scene/GameObject.h"
+#ifdef _DEBUG
+#include "imgui.h"
+#endif
+
+PlayerInputComponent::PlayerInputComponent(GameObject *pOwner) : Component(pOwner)
+{
+}
+// マウス情報を受け取り、ドラッグ状態だけを記録する。
+void PlayerInputComponent::Sample(const PointerFrame &frame, bool canAim)
+{
+    m_aim.released = false;
+    if (!frame.valid || !canAim)
+    {
+        Cancel();
+        return;
+    }
+    if (frame.pressed)
+    {
+        Cancel();
+        // ゲーム画面のどこからでもドラッグ開始。
+        m_aim.dragging = true;
+        m_aim.anchor = frame.point;
+        m_aim.point = frame.point;
+    }
+    if (!m_aim.dragging)
+        return;
+
+    m_aim.point = frame.point;
+    if (frame.released)
+    {
+        m_aim.dragging = false;
+        m_aim.released = true;
+    }
+    else if (!frame.held)
+        Cancel();
+}
+AimState PlayerInputComponent::GetAim() const
+{
+    return m_aim;
+}
+void PlayerInputComponent::Cancel()
+{
+    m_aim = {};
+}
+std::unique_ptr<Component> PlayerInputComponent::Clone(GameObject *pNewOwner) const
+{
+    auto pCopy = std::make_unique<PlayerInputComponent>(pNewOwner);
+    pCopy->SetEnabled(IsEnabled());
+    return pCopy;
+}
+#ifdef _DEBUG
+void PlayerInputComponent::DrawDebugInspector()
+{
+    ImGui::TextUnformatted("No saved settings");
+}
+#endif
+```
+
+### 上から読む
+
+- SampleはBoardPointerから受け取った情報を調べる。
+- `valid` がfalse、または発射不可ならCancelして終わり。
+- 発射可能なときに押した瞬間なら、プレイヤーのクリック判定なしでdraggingをtrue、
+　仮想開始位置anchorとpointを記録する。BoardPointerは開始を(0,0)とする。
+- ドラッグ中だけpointを更新。離したらreleasedをtrueにしてdraggingをfalse。
+- `released` は1回のSampleだけtrue。次のフレームで消える。
+- 実際のマウス位置やWinAPIはリード担当。ここでは情報を受け取るだけ。
+
+### 穴埋め練習
+
+問題：`m_aim.dragging = false; 【空欄】;` 離したことを伝える。
+
+確認する結果：任意のゲーム画面で開始→dragging=true。
+相対移動で仮想XZ座標が変化→point更新。
+離す→released=true。入力無効／発射不可→Cancel。
+
+<details>
+<summary>模範解答（考えてから開く）</summary>
+
+```cpp
+m_aim.released = true;
+```
+
+</details>
+
+## 4. PlayerLaunchComponent（逆向きに飛ばす）
+
+**先にhを確認・作成**（共有済みなら書き直さない）
+
+`Source/Game/Components/PlayerLaunchComponent.h`（ファイル全文・省略なし）
+
+```cpp
+#pragma once
+#include "Engine/Scene/Component.h"
+#include "Game/Systems/GameTypes.h"
+
+class PlayerLaunchComponent : public Component
+{
+  public:
+    explicit PlayerLaunchComponent(GameObject *pOwner);
+    const char *GetTypeId() const override
+    {
+        return "PlayerLaunch";
+    }
+    const char *GetTypeName() const override
+    {
+        return "PlayerLaunch";
+    }
+    std::unique_ptr<Component> Clone(GameObject *pNewOwner) const override;
+#ifdef _DEBUG
+    void DrawDebugInspector() override;
+#endif
+    bool TryBuildVelocity(const AimState &aim, BoardVec2 &out) const;
+    void Configure(float minDrag, float maxDrag, float maxSpeed);
+    float GetMinDrag() const;
+    float GetMaxDrag() const;
+    float GetMaxSpeed() const;
+
+  private:
+    float m_minDrag = 0.1f;
+    float m_maxDrag = 3.0f;
+    float m_maxSpeed = 10.0f;
+};
+```
+
+**次にcppを作成**
+
+`Source/Game/Components/PlayerLaunchComponent.cpp`（ファイル全文・省略なし）
+
+```cpp
+#include "PlayerLaunchComponent.h"
+#include "Engine/Scene/GameObject.h"
+#include <cmath>
+#ifdef _DEBUG
+#include "imgui.h"
+#endif
+
+PlayerLaunchComponent::PlayerLaunchComponent(GameObject *pOwner) : Component(pOwner)
+{
+}
+void PlayerLaunchComponent::Configure(float minDrag, float maxDrag, float maxSpeed)
+{
+    if (!std::isfinite(minDrag) || !std::isfinite(maxDrag) || !std::isfinite(maxSpeed))
+        return;
+    if (minDrag < 0 || maxDrag <= 0 || minDrag > maxDrag || maxSpeed <= 0)
+        return;
+    m_minDrag = minDrag;
+    m_maxDrag = maxDrag;
+    m_maxSpeed = maxSpeed;
+}
+// 引っ張った方向の逆へ飛ばす。距離に応じて速さを決める。
+bool PlayerLaunchComponent::TryBuildVelocity(const AimState &aim, BoardVec2 &out) const
+{
+    out = {};
+    if (!aim.released)
+        return false;
+
+    float x = aim.anchor.x - aim.point.x;
+    float z = aim.anchor.z - aim.point.z;
+    float length = std::sqrt(x * x + z * z);
+    if (!std::isfinite(length) || length <= 0 || length < m_minDrag)
+        return false;
+
+    float speed = length / m_maxDrag * m_maxSpeed;
+    if (speed > m_maxSpeed)
+        speed = m_maxSpeed;
+    out.x = x / length * speed;
+    out.z = z / length * speed;
+    return true;
+}
+float PlayerLaunchComponent::GetMinDrag() const
+{
+    return m_minDrag;
+}
+float PlayerLaunchComponent::GetMaxDrag() const
+{
+    return m_maxDrag;
+}
+float PlayerLaunchComponent::GetMaxSpeed() const
+{
+    return m_maxSpeed;
+}
+std::unique_ptr<Component> PlayerLaunchComponent::Clone(GameObject *pNewOwner) const
+{
+    auto pCopy = std::make_unique<PlayerLaunchComponent>(pNewOwner);
+    pCopy->Configure(m_minDrag, m_maxDrag, m_maxSpeed);
+    pCopy->SetEnabled(IsEnabled());
+    return pCopy;
+}
+#ifdef _DEBUG
+void PlayerLaunchComponent::DrawDebugInspector()
+{
+    float a = m_minDrag;
+    float b = m_maxDrag;
+    float c = m_maxSpeed;
+    ImGui::DragFloat("Min drag", &a, 0.05f, 0, 10);
+    ImGui::DragFloat("Max drag", &b, 0.1f, 0.01f, 20);
+    ImGui::DragFloat("Launch speed", &c, 0.1f, 0.01f, 100);
+    Configure(a, b, c);
+}
+#endif
+```
+
+### 上から読む
+
+- 離した瞬間だけ計算。
+- anchorからpointを引く。引っ張った方向と逆のベクトルになる。
+　座標は仮想XZのため、開始した画面位置・プレイヤー位置に関係ない。
+- `sqrt(x*x+z*z)` が距離。短すぎる場合は発射しない（0除算防止も兼ねる）。
+- 距離 / 最大ドラッグ距離 × 最大速度。上限を超えたら最大速度にする。
+- x / length、z / lengthで方向を取り出し、speedを掛ける。
+- outは呼び出し元へ発射速度を返すための参照引数。
+
+### 穴埋め練習
+
+問題：`float x = 【空欄】;` ドラッグの逆向きのX差を求める。
+
+確認する結果：開始(0,0)、終了(-3,0)、最大速度10なら(10,0)を返す。
+
+<details>
+<summary>模範解答（考えてから開く）</summary>
+
+```cpp
+aim.anchor.x - aim.point.x
+```
+
+</details>
+
+## 用語
+
+- dt：前回からの経過秒数。1秒間に60回なら約1/60秒。
+- sqrt：平方根。速度(3,4)の長さは5。
+- 参照引数 `&`：呼び出し元の変数を直接変更することができる。
+- Configure：設定する処理。CloneとJSON保存が使うので削除しない。
