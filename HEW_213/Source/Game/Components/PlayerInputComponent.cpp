@@ -5,6 +5,8 @@
 #include "imgui.h"
 #endif
 
+using namespace std;
+
 PlayerInputComponent::PlayerInputComponent(GameObject* pOwner) : Component(pOwner)
 {
 }
@@ -25,7 +27,7 @@ void PlayerInputComponent::Sample(const PointerFrame& frame, bool canAim)
 		//ゲーム画面のどこからでもドラッグ開始
 		m_aim.dragging = true;
 		m_aim.anchor   = frame.point;
-		m_aim.point = frame.point;
+		m_aim.point    = frame.point;
 	}
 
 	if (!m_aim.dragging) return;
@@ -54,7 +56,7 @@ void PlayerInputComponent::Cancel()
 
 std::unique_ptr<Component> PlayerInputComponent::Clone(GameObject* pNewOwner) const
 {
-	auto pCopy = std::make_unique<PlayerInputComponent>(pNewOwner);
+	auto pCopy = make_unique<PlayerInputComponent>(pNewOwner);
 	pCopy->SetEnabled(IsEnabled());
 	return pCopy;
 }

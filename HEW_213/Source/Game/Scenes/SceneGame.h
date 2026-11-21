@@ -31,6 +31,7 @@ private:
 	void DrawDebugGrid();
 	void ResetGamePlay();
 	void UpdateGameplay(float dt);
+	void UpdatePlayerInput();
 	void UpdatePhysics(float dt);
 	void ApplyCollisionNotices(const std::vector<CollisionNotice>& notices);
 	bool AnyMoving() const;
