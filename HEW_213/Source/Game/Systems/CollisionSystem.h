@@ -13,11 +13,11 @@ public:
 	// 描画・HP変更・vector削除はしない。
 	// 通知は呼び出し直後に消費。
 	void Step(
-		const std::vector<std::unique_ptr<GameObject>>& objects,
-		std::vector<CollisionNotice>& outNotices);
+		const std::vector<std::unique_ptr<GameObject>> &objects,
+		std::vector<CollisionNotice> &outNotices);
 
 	static bool Detect(
-		GameObject& a, GameObject& b, Contact& out);
+		GameObject &a, GameObject &b, Contact &out);
 
 	static BoardVec2 Reflect(
 		BoardVec2 velocity, BoardVec2 normal, float restitution);

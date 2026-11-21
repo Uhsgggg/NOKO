@@ -30,11 +30,18 @@ HudView HudPresenter::Build(const HudInput& input, float maxDrag)
 		view.enemyRatios.push_back(ratio);
 		HudColor color;
 		if (ratio > 0.5f)
-			color = { 0,1,0,1 }; // óŒ
+		{
+			color = { 0,1,0,1 }; // ‚Äî√é
+		}
 		else if (ratio > 0.25f)
-			color = { 1,1,0,1 }; // â©
+		{
+			color = { 1,1,0,1 }; // ‚Ä∞¬©
+		}
 		else
-			color = { 1,0,0,1 }; // ê‘
+		{
+			color = { 1,0,0,1 }; // ¬ê√î
+		}
+
 		view.enemyColors.push_back(color);
 	}
 

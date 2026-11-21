@@ -20,7 +20,6 @@ void HealthComponent::Reset(int maxHP)
 int HealthComponent::ApplyDamage(int amount)
 {
 	if (amount <= 0 || m_hp == 0) return 0;
-
 	if (amount > m_hp)
 	{
 		amount = m_hp;
@@ -52,7 +51,9 @@ void HealthComponent::DrawDebugInspector()
 {
 	int hp = m_maxHP;
 	if (ImGui::DragInt("Max HP", &hp, 1, 1, 100000) && hp > 0)
+	{
 		Reset(hp);
+	}
 	ImGui::Text("HP: &d / %d", m_hp, m_maxHP);
 }
 #endif // _DEBUG

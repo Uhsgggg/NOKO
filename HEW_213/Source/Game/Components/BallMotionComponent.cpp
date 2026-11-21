@@ -7,14 +7,14 @@
 
 using namespace std;
 
-//‘¬“x‚ÍXZ•½–Ê‚Ì‚İBClone‚É‚Íİ’è‚Ì‚İƒRƒs[‚·‚é
+//é€Ÿåº¦ã¯XZå¹³é¢ã®ã¿ã€‚Cloneæ™‚ã«ã¯è¨­å®šã®ã¿ã‚³ãƒ”ãƒ¼ã™ã‚‹
 BallMotionComponent::BallMotionComponent(GameObject* pOwner) : Component(pOwner)
 {
 }
 
 void BallMotionComponent::Configure(float deceleration, float stopSpeed, float maxSpeed)
 {
-	//İ’è‚ªŠÔˆá‚Á‚Ä‚¢‚½‚ç¡‚Ìİ’è‚ğc‚·
+	//è¨­å®šãŒé–“é•ã£ã¦ã„ãŸã‚‰ä»Šã®è¨­å®šã‚’æ®‹ã™
 	if (!isfinite(deceleration) ||
 		!isfinite(stopSpeed) ||
 		!isfinite(maxSpeed))
@@ -22,7 +22,8 @@ void BallMotionComponent::Configure(float deceleration, float stopSpeed, float m
 
 	if (deceleration <= 0 ||
 		stopSpeed < 0 ||
-		maxSpeed <= stopSpeed) return;
+		maxSpeed <= stopSpeed)
+		return;
 
 	m_deceleration = deceleration;
 	m_stopSpeed    = stopSpeed;
@@ -77,7 +78,7 @@ float BallMotionComponent::GetMaxSpeed() const
 	return m_maxSpeed;
 }
 
-// 1.ˆÊ’u‚ğŒˆ‚ß‚é ¨ 2.‘¬‚³‚¾‚¯‚ğ¬‚³‚­‚·‚é ¨ 3.’â~”»’è
+// ä½ç½®ã‚’æ±ºã‚ã‚‹ â†’ é€Ÿã•ã ã‘ã‚’å°ã•ãã™ã‚‹ â†’ åœæ­¢åˆ¤å®š
 void BallMotionComponent::Update(float dt)
 {
 	if (!m_pOwner || !IsMoving() ||
@@ -96,7 +97,7 @@ void BallMotionComponent::Update(float dt)
 		Stop();
 		return;
 	}
-	//Œü‚«‚ğ•Ï‚¦‚¸‚É‘¬‚³‚¾‚¯Œ¸‚ç‚·
+	// å‘ãã‚’å¤‰ãˆãšã«é€Ÿã•ã ã‘æ¸›ã‚‰ã™
 	m_velocity.x = m_velocity.x / Speed * nextSpeed;
 	m_velocity.z = m_velocity.z / Speed * nextSpeed;
 }
@@ -115,9 +116,9 @@ void BallMotionComponent::DrawDebugInspector()
 	float d = m_deceleration;
 	float s = m_stopSpeed;
 	float m = m_maxSpeed;
-	ImGui::DragFloat("Deceleration", &d, 0.1f, 0.01f, 100.0f);
-	ImGui::DragFloat("Stop speed", &s, 0.01f, 0.0f, 10.0f);
-	ImGui::DragFloat("Max speed", &m, 0.1f, 0.0f, 100.0f);
+	ImGui::DragFloat("Deceleration", &d,  0.1f, 0.01f, 100.0f);
+	ImGui::DragFloat("Stop speed",   &s, 0.01f,  0.0f,  10.0f);
+	ImGui::DragFloat("Max speed",    &m,  0.1f,  0.0f, 100.0f);
 	Configure(d, s, m);
 	ImGui::Text("Velocity: %.2f, %.2f", m_velocity.x, m_velocity.z);
 }
