@@ -78,7 +78,7 @@ float BallMotionComponent::GetMaxSpeed() const
 	return m_maxSpeed;
 }
 
-// 1.位置を決める → 2.速さだけを小さくする → 3.停止判定
+// 位置を決める → 速さだけを小さくする → 停止判定
 void BallMotionComponent::Update(float dt)
 {
 	if (!m_pOwner || !IsMoving() ||
@@ -97,7 +97,7 @@ void BallMotionComponent::Update(float dt)
 		Stop();
 		return;
 	}
-	//向きを変えずに速さだけ減らす
+	// 向きを変えずに速さだけ減らす
 	m_velocity.x = m_velocity.x / Speed * nextSpeed;
 	m_velocity.z = m_velocity.z / Speed * nextSpeed;
 }
