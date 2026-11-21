@@ -149,8 +149,8 @@ BoardVec2 CollisionSystem::Reflect(BoardVec2 v, BoardVec2 n, float e)
 	//•Ç‚ÉŒü‚©‚Á‚Ä‚¢‚È‚¢‚È‚ç’µ‚Ë•Ô‚³‚È‚¢
 	if (dot >= 0)
 		return v; 
-	v.x - (1 + e) * dot * n.x;
-	v.z - (1 + e) * dot * n.z;
+	v.x -= (1 + e) * dot * n.x;
+	v.z -= (1 + e) * dot * n.z;
 	return v;
 }
 

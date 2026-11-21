@@ -40,7 +40,7 @@ std::unique_ptr<Component> ColliderComponent::Clone(GameObject *pNewOwner) const
 	return pCopy;
 }
 
-#ifdef DEBUG
+#ifdef _DEBUG
 void ColliderComponent::DrawDebugInspector()
 {
 	ColliderConfig c = m_config;
@@ -56,4 +56,4 @@ void ColliderComponent::DrawDebugInspector()
 	ImGui::DragFloat("Restitution", &c.restitution, 0.01f, 0, 1.0f);
 	Configure(c);
 }
-#endif // DEBUG
+#endif

@@ -1,8 +1,8 @@
 #include "ReflectionCounterComponent.h"
 #include "Engine/Scene/GameObject.h"
-#ifdef DEBUG
+#ifdef _DEBUG
 #include"imgui.h"
-#endif // DEBUG
+#endif
 
 
 ReflectionCounterComponent::ReflectionCounterComponent(GameObject *pOwner)
@@ -34,11 +34,11 @@ std::unique_ptr<Component> ReflectionCounterComponent::Clone(GameObject *pNewOwn
 	return pCopy;
 }
 
-#ifdef DEBUG
+#ifdef _DEBUG
 void ReflectionCounterComponent::DrawDebugInspector()
 {
 	ImGui::Text("Reflection: %d", m_count);
 }
-#endif // DEBUG
+#endif
 
 
