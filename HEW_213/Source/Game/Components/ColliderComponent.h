@@ -6,20 +6,20 @@
 class ColliderComponent : public Component
 {
 public:
-	explicit ColliderComponent(GameObject* owner);
+	explicit ColliderComponent(GameObject *pOwner);
 
-	const char* GetTypeId() const override
+	const char *GetTypeId() const override
 	{
 		return "Collider";
 	}
 
-	const char* GetTypeName() const override
+	const char *GetTypeName() const override
 	{
 		return "Collider";
 	}
 
 	std::unique_ptr<Component> Clone(
-		GameObject* pNewOwner) const override;
+		GameObject *pNewOwner) const override;
 
 #ifdef _DEBUG
 	void DrawDebugInspector() override;

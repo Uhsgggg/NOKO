@@ -279,6 +279,14 @@
     <ClCompile Include="Source\Game\UI\HudRenderer.cpp">
       <Filter>ソース ファイル\Game\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Components\ColliderComponent.cpp">
+      <Filter>ソース ファイル\Game\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Components\ReflectionCounterComponent.cpp">
+      <Filter>ソース ファイル\Game\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Systems\CollisionSystem.cpp">
+      <Filter>ソース ファイル\Game\Systems</Filter>
     <ClCompile Include="Source\Game\Systems\TurnSystem.cpp">
       <Filter>ソース ファイル\Game\Systems</Filter>
     </ClCompile>
