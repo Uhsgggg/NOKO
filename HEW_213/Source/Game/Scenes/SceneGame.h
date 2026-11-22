@@ -14,6 +14,11 @@
 #include <vector>
 #include <memory>
 
+#ifdef _DEBUG
+#include <unordered_map>
+#include <string>
+#endif
+
 class CameraPlay;
 
 class SceneGame : public Scene
@@ -77,6 +82,13 @@ private: // Debug
 	void UpdateColliderDebug();
 	void DrawColliderDebug();
 	void DrawColliderDebugPanel();
+	void DrawDamageMonitor();
+	// Play Modeを開始する
+	void EnterPlayMode();
+	void DrawEditor();
+
+	// Play Modeを終了する
+	void ExitPlayMode();
 
 	// true  : Edit Mode
 	// false : Play Mode
@@ -85,12 +97,29 @@ private: // Debug
 	// Play中に編集用のGameObjectを保管する
 	std::vector<std::unique_ptr<GameObject>> m_editObjects;
 
-	// Play Modeを開始する
-	void EnterPlayMode();
-	void DrawEditor();
+	// 攻撃履歴
+	struct DamageDebugStats
+	{
+		// 最後に計算されたダメージ
+		int lastCalculateDamage = 0;
+		// 最後に実際に与えたダメージ
+		int lastAppliedDamage = 0;
+		// 累計で与えたダメージ
+		int lastReflectionCount = 0;
+		// 攻撃した回数
+		int hitCount = 0;
+		// 最後に攻撃した相手
+		long long totalAppliedDamage = 0;
+		// 最後の攻撃時の反射回数
+		std::string lastTargetName;
+	};
 
-	// Play Modeを終了する
-	void ExitPlayMode();
+	// キャラクターごとに記録する
+	std::unordered_map<const GameObject*, DamageDebugStats> m_damageDebugStats;
+
+	// 戦闘デバッグモニターを表示するかしないか
+	bool m_showDamageMonitor = true;
+
 #endif
 };
 

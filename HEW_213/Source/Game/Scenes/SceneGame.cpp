@@ -200,6 +200,11 @@ void SceneGame::Update()
 		}
 	}
 
+	if (!m_isEditMode && IsKeyTrigger(VK_F2))
+	{
+		m_showDamageMonitor = !m_showDamageMonitor;
+	}
+
 	// Edit Mode中はゲームを更新しない
 	shouldUpdateGame = !m_isEditMode;
 	UpdateColliderDebug();
@@ -215,6 +220,7 @@ void SceneGame::Update()
 #ifdef _DEBUG
 			ExitPlayMode();
 			EnterPlayMode();
+			m_damageDebugStats.clear();
 #else
 			if (LoadGameplayStage())
 			{
@@ -312,8 +318,8 @@ void SceneGame::Draw()
 
 #ifdef _DEBUG
 	// モードに関係なく表示する
-	DrawColliderDebugPanel();
 	DrawColliderDebug();
+	DrawColliderDebugPanel();
 	if (m_isEditMode)
 	{
 		DrawEditor();
@@ -321,6 +327,7 @@ void SceneGame::Draw()
 	else
 	{
 		DrawGameplayHUD();
+		DrawDamageMonitor();
 	}
 #else
 	DrawGameplayHUD();
@@ -443,22 +450,24 @@ void SceneGame::UpdateColliderDebug()
 
 #ifdef _DEBUG
 void SceneGame::DrawColliderDebugPanel()
-{// ImGui
-	if (GetCurrentContext()) return;
+{
+	if (!GetCurrentContext()) return;
+
+	SetNextWindowBgAlpha(0.85f);
 
 	float centerX = GetIO().DisplaySize.x * 0.5f;
 	SetNextWindowPos(ImVec2(centerX, 12.0f),
 		ImGuiCond_FirstUseEver, ImVec2(0.5f, 0.0f));
 
 	if (Begin("Collider Debug", nullptr,
-		ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse))
+		ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		Checkbox("Show Colliders", &m_bShowColliders);
 		TextColored(ImVec4(0.1f, 0.65f, 1.0f, 1.0f), "Player");
 		SameLine();
-		TextColored(ImVec4(0.1f, 0.2f, 0.2f, 1.0f), "Enemy");
+		TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "Enemy");
 		SameLine();
-		TextColored(ImVec4(0.8f, 0.3f, 1.0f, 1.0f), "Boss");
+		TextColored(ImVec4(0.8f, 0.5f, 1.0f, 1.0f), "Boss");
 		SameLine();
 		TextColored(ImVec4(1.0f, 0.85f, 0.15f, 1.0f), "Wall");
 		TextUnformatted("White = Hit (9 frames)");

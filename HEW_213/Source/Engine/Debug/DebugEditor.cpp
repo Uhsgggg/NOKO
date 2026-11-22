@@ -82,7 +82,7 @@ namespace
 		float leftWidth = layout.size.x * 0.22f;
 
 		if (leftWidth < 240.0f) leftWidth = 240.0f;
-		if (leftWidth > 300.0f) leftWidth = 300.0f;
+		if (leftWidth > 240.0f) leftWidth = 240.0f;
 
 		layout.hierarchyWidth = leftWidth;
 

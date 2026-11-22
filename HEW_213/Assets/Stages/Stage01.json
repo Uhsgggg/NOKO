@@ -30,9 +30,9 @@
         },
         {
             "color": [
-                0.7829181551933289,
-                0.7829181551933289,
-                0.7829181551933289,
+                0.39145904779434204,
+                0.39145904779434204,
+                0.39145904779434204,
                 1.0
             ],
             "components": [
@@ -75,9 +75,9 @@
         },
         {
             "color": [
-                0.7843137383460999,
-                0.7843137383460999,
-                0.7843137383460999,
+                0.3921568691730499,
+                0.3921568691730499,
+                0.3921568691730499,
                 1.0
             ],
             "components": [
@@ -116,9 +116,9 @@
         },
         {
             "color": [
-                0.7843137383460999,
-                0.7843137383460999,
-                0.7843137383460999,
+                0.3921568691730499,
+                0.3921568691730499,
+                0.3921568691730499,
                 1.0
             ],
             "components": [
@@ -157,9 +157,9 @@
         },
         {
             "color": [
-                0.7843137383460999,
-                0.7843137383460999,
-                0.7843137383460999,
+                0.3921568691730499,
+                0.3921568691730499,
+                0.3921568691730499,
                 1.0
             ],
             "components": [
@@ -229,7 +229,7 @@
                 },
                 {
                     "enabled": true,
-                    "maxHP": 10000,
+                    "maxHP": 500,
                     "type": "Health"
                 }
             ],
@@ -283,7 +283,7 @@
                 },
                 {
                     "enabled": true,
-                    "maxHP": 10000,
+                    "maxHP": 500,
                     "type": "Health"
                 },
                 {
@@ -314,9 +314,9 @@
         },
         {
             "color": [
-                0.43772244453430176,
-                0.43772244453430176,
-                0.43772244453430176,
+                0.3921568691730499,
+                0.3921568691730499,
+                0.3921568691730499,
                 1.0
             ],
             "components": [
@@ -356,9 +356,9 @@
         },
         {
             "color": [
-                0.43772244453430176,
-                0.43772244453430176,
-                0.43772244453430176,
+                0.3921568691730499,
+                0.3921568691730499,
+                0.3921568691730499,
                 1.0
             ],
             "components": [
@@ -418,12 +418,12 @@
                 },
                 {
                     "enabled": true,
-                    "maxHP": 10000,
+                    "maxHP": 1000,
                     "type": "Health"
                 }
             ],
             "modelPath": "Assets/Model/KingSlime.fbx",
-            "name": "KingSlime",
+            "name": "Boss",
             "transform": {
                 "position": [
                     5.5,
@@ -469,7 +469,7 @@
                 },
                 {
                     "enabled": true,
-                    "maxDrag": 5.0,
+                    "maxDrag": 7.0,
                     "maxSpeed": 200.0,
                     "minDrag": 1.0,
                     "type": "PlayerLaunch"
@@ -487,7 +487,7 @@
                 }
             ],
             "modelPath": "Assets/Model/MainCharacter_01.fbx",
-            "name": "MainCharacter_01",
+            "name": "Player",
             "transform": {
                 "position": [
                     -5.0,
@@ -540,11 +540,11 @@
                 },
                 {
                     "enabled": true,
-                    "maxHP": 10000,
+                    "maxHP": 500,
                     "type": "Health"
                 }
             ],
-            "name": "Enemy1_Copy",
+            "name": "Enemy3",
             "shape": "Sphere",
             "transform": {
                 "position": [
@@ -598,11 +598,11 @@
                 },
                 {
                     "enabled": true,
-                    "maxHP": 10000,
+                    "maxHP": 500,
                     "type": "Health"
                 }
             ],
-            "name": "Enemy1_Copy_Copy",
+            "name": "Enemy4",
             "shape": "Sphere",
             "transform": {
                 "position": [
@@ -656,11 +656,11 @@
                 },
                 {
                     "enabled": true,
-                    "maxHP": 10000,
+                    "maxHP": 500,
                     "type": "Health"
                 }
             ],
-            "name": "Enemy1_Copy_Copy_Copy",
+            "name": "Enemy5",
             "shape": "Sphere",
             "transform": {
                 "position": [

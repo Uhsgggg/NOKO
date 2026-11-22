@@ -18,6 +18,11 @@
 
 #include "Game/UI/HudPresenter.h"
 
+#ifdef _DEBUG
+#include "imgui.h"
+using namespace ImGui;
+#endif
+
 #include <Windows.h>
 #include <cmath>
 #include <string>
@@ -35,7 +40,7 @@ namespace
 	constexpr int kShots = 10;
 	constexpr int kWaveInterval = 3;
 	constexpr float kBaseDamage = 10.0f;
-	constexpr float kReflectionMultiplier = 1.35f;
+	constexpr float kReflectionMultiplier = 1.1f;
 	template <class T> T* Enabled(GameObject& o)
 	{
 		T* p = o.GetComponent<T>();
@@ -94,6 +99,9 @@ void SceneGame::ResetGamePlay()
 	m_spawnSerial = 0;
 	m_hasBoss = false;
 	m_hadEnemies = false;
+#ifdef _DEBUG
+	m_damageDebugStats.clear();
+#endif
 
 	// 全てのオブジェクトからプレイヤーの情報を取得して無効化する
 	for (auto& p : m_objects)
@@ -242,12 +250,31 @@ void SceneGame::ApplyCollisionNotices(const vector<CollisionNotice>& notices)
 		auto* pHP = Enabled<HealthComponent>(*pTarget);
 		if (!pHP) continue;
 
-		int damage = DamageFormula::Calculate(
-			kBaseDamage, 
-			kReflectionMultiplier,
-			notice.reflectionCount);
+		const int calculatedDamage = 
+			DamageFormula::Calculate(
+				kBaseDamage, 
+				kReflectionMultiplier,
+				notice.reflectionCount
+			);
 
-		pHP->ApplyDamage(damage);
+		// 実際に減少したHPを記録
+		const int actualDamage = pHP->ApplyDamage(calculatedDamage);
+
+#ifdef _DEBUG
+		// 攻撃したGameObjectの履歴を取得
+		DamageDebugStats& stats = m_damageDebugStats[notice.attacker];
+		// 今回の攻撃情報を保存
+		stats.lastCalculateDamage = calculatedDamage;
+		stats.lastAppliedDamage = actualDamage;
+		stats.lastReflectionCount = notice.reflectionCount;
+		// 最後に攻撃した相手の名前
+		stats.lastTargetName = pTarget->GetName();
+		// 累計ダメージと攻撃回数
+		stats.totalAppliedDamage += actualDamage;
+		++stats.hitCount;
+#endif
+
+		pHP->ApplyDamage(calculatedDamage);
 		if (pHP->IsDead())
 		{
 			auto* pMotion = Enabled<BallMotionComponent>(*pTarget);
@@ -465,3 +492,138 @@ void SceneGame::DrawGameplayHUD()
 	}
 	m_hudRenderer.Draw(m_hud, m_hasBoss, m_result);
 }
+
+#ifdef _DEBUG
+void SceneGame::DrawDamageMonitor()
+{
+	if (!m_showDamageMonitor) return;
+
+	// ウィンドウ設定
+	const ImGuiWindowFlags windowFlags =
+		ImGuiWindowFlags_AlwaysAutoResize |
+		ImGuiWindowFlags_NoSavedSettings;
+	SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
+	SetNextWindowBgAlpha(0.85f);
+
+	if (Begin("戦闘デバッグ", nullptr, windowFlags))
+	{
+		// ゲーム全体の情報
+		Text("基礎ダメ: %.1f　反射倍率: %.2f",
+			kBaseDamage, kReflectionMultiplier);
+		Text("残り手数: %d", m_turn.GetRemainingShots());
+		Separator();
+
+		// 各GameObjectの情報
+		for (const auto& pObject : m_objects)
+		{
+			if (!pObject) continue;
+
+			// Colliderからオブジェクトの役割を取得
+			auto* pCollider = Enabled<ColliderComponent>(*pObject);
+
+			if (!pCollider) continue;
+
+
+			const GameRole role = pCollider->GetConfig().role;
+			// ボスのHP表示
+			if (role == GameRole::Boss)
+			{
+				PushStyleColor(
+					ImGuiCol_Text,
+					ImVec4(0.8f, 0.5f, 1.0f, 1.0f)
+				);
+
+				auto* pHP = Enabled<HealthComponent>(*pObject);
+
+				if (pHP)
+				{
+					Text("[BOSS] %s HP: %d / %d",
+						pObject->GetName().c_str(),
+						pHP->GetHP(),
+						pHP->GetMaxHP()
+					);
+				}
+
+				PopStyleColor();
+				continue;
+			}
+
+			// プレイヤーと雑魚敵だけ表示
+			if (role != GameRole::Player &&
+				role != GameRole::Enemy)
+				continue;
+
+			// 反射回数のコンポーネントを取得
+			auto* pCounter = Enabled<ReflectionCounterComponent>(*pObject);
+
+			// 現在の反射回数を使ってダメージを計算
+			const int reflectionCount = 
+				pCounter ? pCounter->GetCount() : 0;
+
+			// 現在の攻撃力を計算
+			const int currentDamage =
+				DamageFormula::Calculate(
+					kBaseDamage,
+					kReflectionMultiplier,
+					reflectionCount
+				);
+
+			// 保存済みの履歴を検索
+			const auto statsIt =
+				m_damageDebugStats.find(pObject.get());
+
+			const DamageDebugStats* pStats =
+				statsIt != m_damageDebugStats.end()
+				? &statsIt->second
+				: nullptr;
+
+			const char* roleName =
+				role == GameRole::Player
+				? "PLAYER" : "ENEMY";
+			const ImVec4 textColor =
+				role == GameRole::Player
+				? ImVec4(0.35f, 0.8f, 1.0f, 1.0f)
+				: ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
+			PushStyleColor(ImGuiCol_Text, textColor);
+
+			Text("[%s] %s", 
+				roleName, 
+				pObject->GetName().c_str()
+			);
+			Text("反射: %d　攻撃力: %d", 
+				reflectionCount, 
+				currentDamage
+			);
+
+			if (pStats)
+			{
+				Text("直近ダメージ: %d",
+					pStats->lastAppliedDamage
+				);
+				Text("累計ダメージ: %lld",
+					pStats->totalAppliedDamage
+				);
+				Text("攻撃回数: %d",
+					pStats->hitCount
+				);
+				Text("最後の攻撃対象: %s",
+					pStats->lastTargetName.c_str()
+				);
+				Text("攻撃時の反射: %d / 計算値: %d",
+					pStats->lastReflectionCount,
+					pStats->lastCalculateDamage
+				);
+			}
+			else
+			{
+				TextUnformatted("まだ攻撃してません");
+			}
+
+			Separator();
+			PopStyleColor();
+		}
+	}
+
+	End();
+}
+#endif

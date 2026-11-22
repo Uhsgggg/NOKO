@@ -46,7 +46,7 @@ int HealthComponent::GetMaxHP() const
 }
 bool HealthComponent::IsDead() const
 {
-	return m_hp == 0;
+	return m_hp <= 0;
 }
 std::unique_ptr<Component>HealthComponent::Clone(GameObject* pNewOwner) const
 {
