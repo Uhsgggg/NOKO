@@ -1,8 +1,9 @@
-#include "BallMotionComponent.h"
+﻿#include "BallMotionComponent.h"
 #include "Engine/Scene/GameObject.h"
 #include <cmath>
 #ifdef _DEBUG
 #include "imgui.h"
+using namespace ImGui;
 #endif
 
 using namespace std;
@@ -31,9 +32,9 @@ void BallMotionComponent::Configure(float deceleration, float stopSpeed, float m
 	SetVelocity(m_velocity);
 }
 
-void BallMotionComponent::SetVelocity(BoardVec2 v)
+void BallMotionComponent::SetVelocity(BoardVec2 velocity)
 {
-	float speed = sqrt(v.x * v.x + v.z * v.z);
+	float speed = sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
 	if (!isfinite(speed)) return;
 	if (speed <= m_stopSpeed)
 	{
@@ -42,10 +43,10 @@ void BallMotionComponent::SetVelocity(BoardVec2 v)
 	}
 	if (speed > m_maxSpeed)
 	{
-		v.x = v.x / speed * m_maxSpeed;
-		v.z = v.z / speed * m_maxSpeed;
+		velocity.x = velocity.x / speed * m_maxSpeed;
+		velocity.z = velocity.z / speed * m_maxSpeed;
 	}
-	m_velocity = v;
+	m_velocity = velocity;
 }
 
 BoardVec2 BallMotionComponent::GetVelocity() const
@@ -79,19 +80,19 @@ float BallMotionComponent::GetMaxSpeed() const
 }
 
 // 位置を決める → 速さだけを小さくする → 停止判定
-void BallMotionComponent::Update(float dt)
+void BallMotionComponent::Update(float deltaTime)
 {
 	if (!m_pOwner || !IsMoving() ||
-		!isfinite(dt) ||
-		dt <= 0) return;
+		!isfinite(deltaTime) ||
+		deltaTime <= 0) return;
 
 	Transform& t = m_pOwner->GetTransform();
-	t.position[0] += m_velocity.x * dt;
-	t.position[2] += m_velocity.z * dt;
+	t.position[0] += m_velocity.x * deltaTime;
+	t.position[2] += m_velocity.z * deltaTime;
 
 	float Speed = sqrt(
 		m_velocity.x * m_velocity.x + m_velocity.z * m_velocity.z);
-	float nextSpeed = Speed - m_deceleration * dt;
+	float nextSpeed = Speed - m_deceleration * deltaTime;
 	if (nextSpeed <= m_stopSpeed)
 	{
 		Stop();
@@ -116,10 +117,13 @@ void BallMotionComponent::DrawDebugInspector()
 	float d = m_deceleration;
 	float s = m_stopSpeed;
 	float m = m_maxSpeed;
-	ImGui::DragFloat("Deceleration", &d,  0.1f, 0.01f, 100.0f);
-	ImGui::DragFloat("Stop speed",   &s, 0.01f,  0.0f,  10.0f);
-	ImGui::DragFloat("Max speed",    &m,  0.1f,  0.0f, 100.0f);
+	DragFloat("減速度", &d,  0.1f, 0.01f, 100.0f);
+	DragFloat("停止速度", &s, 0.01f,  0.0f,  10.0f);
+	DragFloat("最高速度", &m,  0.1f,  0.0f, 100.0f);
 	Configure(d, s, m);
-	ImGui::Text("Velocity: %.2f, %.2f", m_velocity.x, m_velocity.z);
+	Text("現在の速度: %.2f, %.2f", m_velocity.x, m_velocity.z);
+	Text("減速度: 1秒あたりに減らす速さ");
+	Text("停止速度: この速度以下になると完全停止");
+	Text("最高速度: 移動速度の上限");
 }
 #endif

@@ -1,3 +1,26 @@
+//========================================//
+// 
+// CollisionSystem.cpp
+// 
+//########################################
+// 変数・引数名
+// 
+// object　　　　衝突する物体
+// pCollider　 　物体の当たり判定
+// config　　　　物体の当たり判定設定
+// position　　　位置
+// radius　　　　半径
+// contact　　 　衝突情報
+// outContact　　衝突判定結果の出力先
+// contactNormal 衝突面の法線ベクトル(n)
+// isColliding 　衝突しているか
+// restitution　 反発係数(e)
+// motion　　　　移動コンポーネント
+// velocity　　　速度
+// 
+//########################################
+// 
+//========================================//
 #include "CollisionSystem.h"
 #include "Engine/Scene/GameObject.h"
 #include "Game/Components/ColliderComponent.h"
@@ -5,62 +28,76 @@
 #include "Game/Components/ReflectionCounterComponent.h"
 #include <cmath>
 
+using namespace std;
+
 //-------------
 // 位置を読む
 //-------------
-//XZ平面上の位置を取得する
+// XZ平面上の位置を取得する
 static BoardVec2 Position(const GameObject& object)
 {
 	const Transform& t = object.GetTransform();
-	return { t.position[0], t.position[2]};
+	return
+	{
+		t.position[0], t.position[2]
+	};
 }
 
 //---------------
 // 範囲内に収める
 //---------------
-//数値を指定範囲からはみ出さないようにする
-static float Limit(float value, float low, float high)
+// 数値を指定範囲からはみ出さないようにする
+static float Limit(float value, float minValue, float maxValue)
 {
-	if (value < low) return low;
-	if (value > high) return high;
+	if (value < minValue) return minValue;
+	if (value > maxValue) return maxValue;
 	return value;
 }
 
 //---------------
 // 内積を計算する
 //---------------
-//二つの方向がどれくらい同じ方向を向いているか
-static float Dot(BoardVec2 a, BoardVec2 b)
+// 二つの方向がどれくらい同じ方向を向いているか
+static float Dot(BoardVec2 objectA, BoardVec2 objectB)
 {
-	return a.x * b.x + a.z * b.z;
+	return objectA.x * objectB.x + objectA.z * objectB.z;
 }
 
 //-------------
 // 球と球
 //-------------
-//normalはB→Aへ向かう方向。
-static bool SpherSpher(BoardVec2 a, float ra, BoardVec2 b, float rb, Contact& out)
+// normalはB→Aへ向かう方向
+static bool SphereSphere(BoardVec2 objectA, float radiusA,
+						 BoardVec2 objectB, float radiusB,
+						 Contact& outContacts)
+	
 {
-	float dx = a.x - b.x;
-	float dz = a.z - b.z;
-	float distance = std::sqrt(dx * dx + dz * dz);
-	if (distance > ra + rb)
-	return false;
+	float dx = objectA.x - objectB.x;
+	float dz = objectA.z - objectB.z;
+	float distance = sqrt(dx * dx + dz * dz);
+	if (distance > radiusA + radiusB)
+	{
+		return false;
+	}
 
-	out.normal = { 1, 0 };  //中心が完全に同じならX方向に逃がす。
+	outContacts.normal = { 1, 0 };  // 中心が完全に同じならX方向に逃がす
 	if (distance > 0)
-		out.normal = { dx / distance, dz / distance };
-	out.penetration = ra + rb - distance;
-	return true;
+	{
+		outContacts.normal = { dx / distance, dz / distance };
+	}
 
+	outContacts.penetration = radiusA + radiusB - distance;
+
+	return true;
 }
 
 
 //-------------
 // 球と箱
 //-------------
-//箱はX/Z軸に平行とする。
-static bool SpherBox(BoardVec2 ball, float radius, BoardVec2 box, BoardVec2 half, Contact& out)
+// 箱はX/Z軸に平行とする
+static bool SphereBox(BoardVec2 ball, float radius, 
+					  BoardVec2 box, BoardVec2 half, Contact& outContact)
 {
 	float dx = ball.x - box.x;
 	float dz = ball.z - box.z;
@@ -68,90 +105,128 @@ static bool SpherBox(BoardVec2 ball, float radius, BoardVec2 box, BoardVec2 half
 	float nearZ = Limit(dz, -half.z, half.z);
 	float x = dx - nearX;
 	float z = dz - nearZ;
-	float distance = std::sqrt(x * x + z * z);
-	if (distance > radius)
-		return false;
+	float distance = sqrt(x * x + z * z);
+	if (distance > radius) return false;
 
 
 	if(distance > 0)
 	{
-		out.normal = { x / distance, z / distance };
-		out.penetration = radius - distance;
+		outContact.normal = { x / distance, z / distance };
+		outContact.penetration = radius - distance;
 		return true;
 	}
 
-	//球の中心が箱の中なら、近い方の面から出す
-	float gapX = half.x - std::fabs(dx);
-	float gapZ = half.z - std::fabs(dz);
-	if (gapX <= gapZ)
+	// 球の中心が箱の中なら、近い方の面から出す
+	float remainingDistanceX = half.x - fabs(dx);
+	float remainingDistanceZ = half.z - fabs(dz);
+	if (remainingDistanceX <= remainingDistanceZ)
 	{
-		out.normal = {1, 0};
-		if (dx < 0) out.normal.x = -1;
-		out.penetration = radius + gapX;
+		outContact.normal = {1, 0};
+		if (dx < 0)
+		{
+			outContact.normal.x = -1;
+		}
+		outContact.penetration = radius + remainingDistanceX;
 	}
 	else
 	{
-		out.normal = {0, 1};
-		if (dz < 0) out.normal.z = -1;
-		out.penetration = radius + gapZ;
+		outContact.normal = {0, 1};
+		if (dz < 0)
+		{
+			outContact.normal.z = -1;
+		}
+		outContact.penetration = radius + remainingDistanceZ;
 	}
+
 	return true;
 }
 
 //---------------------
 // 形に応じて判定を選ぶ
 //---------------------
-bool CollisionSystem::Detect(GameObject& a, GameObject& b, Contact& out)
+bool CollisionSystem::Detect(GameObject& objectA,
+							 GameObject& objectB, Contact& outContact)
 {
-	out = {};
-	if (&a == &b || !a.IsActive() || !b.IsActive())
-		return false;
-	auto* pA = a.GetComponent<ColliderComponent>();
-	auto* pB = b.GetComponent<ColliderComponent>();
-	if (!pA || !pB || !pA->IsEnabled() || !pB->IsEnabled())
-		return false;
-	const ColliderConfig& ca = pA->GetConfig();
-	const ColliderConfig& cb = pB->GetConfig();
+	// 衝突判定結果の出力先
+	outContact = {};
 
-	BoardVec2 pa = Position(a);
-	BoardVec2 pb = Position(b);
-	if (!std::isfinite(pa.x) || !std::isfinite(pa.z) || 
-		!std::isfinite(pb.x) || !std::isfinite(pb.z))
-		return false;
-	bool hit = false;
-	if (ca.shape == ColliderShape::Sphere && cb.shape == ColliderShape::Sphere)
-		hit = SpherSpher(pa, ca.radius, pb, cb.radius, out);
-	else if (ca.shape == ColliderShape::Sphere && cb.shape == ColliderShape::Box)
-		hit = SpherBox(pa, ca.radius, pb, cb.halfExtent, out);
-	else if (ca.shape == ColliderShape::Box && cb.shape == ColliderShape::Sphere)
+	if (&objectA == &objectB ||
+		!objectA.IsActive() || !objectB.IsActive())
 	{
-		hit = SpherBox(pb, cb.radius, pa, ca.halfExtent, out);
-		out.normal.x = -out.normal.x;
-		out.normal.z = -out.normal.z;
+		return false;
 	}
 
-	if (hit)
+	// objectA/Bの当たり判定
+	auto* pColliderA = objectA.GetComponent<ColliderComponent>();
+	auto* pColliderB = objectB.GetComponent<ColliderComponent>();
+
+	if (!pColliderA || !pColliderB ||
+		!pColliderA->IsEnabled() || !pColliderB->IsEnabled())
 	{
-		out.a = &a;
-		out.b = &b;
-	
+		return false;
 	}
-	return hit;
+
+	// objectA/Bの当たり判定設定
+	const ColliderConfig& configA = pColliderA->GetConfig();
+	const ColliderConfig& configB = pColliderB->GetConfig();
+
+	BoardVec2 positionA = Position(objectA);
+	BoardVec2 positionB = Position(objectB);
+	if (!isfinite(positionA.x) || !isfinite(positionA.z) ||
+		!isfinite(positionB.x) || !isfinite(positionB.z))
+	{
+		return false;
+	}
+
+	// 衝突しているか
+	bool isColliding = false;
+
+	if (configA.shape == ColliderShape::Sphere &&
+		configB.shape == ColliderShape::Sphere)
+	{
+		isColliding = SphereSphere(positionA, configA.radius, positionB, configB.radius, outContact);
+	}
+	else if (configA.shape == ColliderShape::Sphere &&
+		configB.shape == ColliderShape::Box)
+	{
+		isColliding = SphereBox(positionA, configA.radius, positionB, configB.halfExtent, outContact);
+	}
+	else if (configA.shape == ColliderShape::Box &&
+		configB.shape == ColliderShape::Sphere)
+	{
+		isColliding = SphereBox(positionB, configB.radius, positionA, configA.halfExtent, outContact);
+		outContact.normal.x = -outContact.normal.x;
+		outContact.normal.z = -outContact.normal.z;
+	}
+
+	if (isColliding)
+	{
+		outContact.objectA = &objectA;
+		outContact.objectB = &objectB;
+	}
+	return isColliding;
 }
 
 //--------
 // 壁反射
 //--------
-//壁に向かっている速度だけを跳ね返す。
-BoardVec2 CollisionSystem::Reflect(BoardVec2 v, BoardVec2 n, float e)
+// 壁に向かっている速度だけを跳ね返す
+BoardVec2 CollisionSystem::Reflect(
+	BoardVec2 velocity, BoardVec2 contactNormal, float restitution)
 {
-	float dot = Dot(v, n);
-	//壁に向かっていないなら跳ね返さない
-	if (dot >= 0)
-		return v; 
-	v.x -= (1 + e) * dot * n.x;
-	v.z -= (1 + e) * dot * n.z;
-	return v;
+	const float velocityAlongNormal = Dot(velocity, contactNormal);
+	// 壁に向かっていないなら跳ね返さない
+	if (velocityAlongNormal >= 0)
+	{
+		return velocity;
+	}
+
+	velocity.x -=
+		(1 + restitution) * velocityAlongNormal * contactNormal.x;
+	velocity.z -=
+		(1 + restitution) * velocityAlongNormal * contactNormal.z;
+
+	return velocity;
 }
 
 //-----------------
@@ -160,63 +235,96 @@ BoardVec2 CollisionSystem::Reflect(BoardVec2 v, BoardVec2 n, float e)
 static BallMotionComponent* GetMotion(GameObject& object)
 {
 	GameRole role = object.GetComponent<ColliderComponent>()->GetConfig().role;
+	
+	// 壁とボスは動かない
 	if (role != GameRole::Player && role != GameRole::Enemy)
-		return nullptr; //壁とボスは動かない
-	if(object.GetComponent<ColliderComponent>()->GetConfig().shape != ColliderShape::Sphere)
-		return nullptr; //球以外は動かない
+	{
+		return nullptr;
+	}
+
+	// 球以外は動かない
+	if (object.GetComponent<ColliderComponent>()
+		->GetConfig().shape != ColliderShape::Sphere)
+	{
+		return nullptr;
+	}
+
 	auto* pMotion = object.GetComponent<BallMotionComponent>();
 	if (pMotion && pMotion->IsEnabled())
+	{
 		return pMotion;
+	}
+
 	return nullptr;
 }
 
 //-----------------
 // めり込みを直す
 //-----------------
-static void PushOut(GameObject& object, BoardVec2 n, float distance)
+static void PushOut(GameObject& object, BoardVec2 contactNormal, float distance)
 {
-	object.GetTransform().position[0] += n.x * distance;
-	object.GetTransform().position[2] += n.z * distance;
+	object.GetTransform().position[0] += contactNormal.x * distance;
+	object.GetTransform().position[2] += contactNormal.z * distance;
 }
 
 //--------------
 // 球同士の反射
 //--------------
-//二つの球は同じ重さとする。衝突方向に沿った速度だけ交換する。
-static void BounceBalls(GameObject& a, BallMotionComponent& ma,
-	GameObject& b, BallMotionComponent& mb,
-	const Contact& c, float e)
+// 二つの球は同じ重さとする
+// 衝突方向に沿った速度だけ交換する
+static void BounceBalls(
+	GameObject& objectA, BallMotionComponent& motionA,
+	GameObject& objectB, BallMotionComponent& motionB,
+	const Contact& contact, float restitution)
 {
-	BoardVec2 n = c.normal;
-	PushOut(a, n, c.penetration / 2);
-	PushOut(b, n, -c.penetration / 2);
-	BoardVec2 va = ma.GetVelocity();
-	BoardVec2 vb = mb.GetVelocity();
-	//近づいていない球はもう反射させない。
-	float speed = Dot(va, n) - Dot(vb, n);
-	if (speed >= 0)
-		return;
-	float change = -(1 + e) * speed / 2;
-	va.x += change * n.x;
-	va.z += change * n.z;
-	ma.SetVelocity(va);
-	mb.SetVelocity(vb);
+	BoardVec2 contactNormal = contact.normal;
+
+	PushOut(objectA, contactNormal,  contact.penetration / 2);
+	PushOut(objectB, contactNormal, -contact.penetration / 2);
+
+	BoardVec2 velocityA = motionA.GetVelocity();
+	BoardVec2 velocityB = motionB.GetVelocity();
+
+	// 近づいていない球はもう反射させない
+	float relativeNormalSpeed = 
+		Dot(velocityA, contactNormal) - Dot(velocityB, contactNormal);
+
+	if (relativeNormalSpeed >= 0) return;
+	
+	float velocityChange =
+		-(1.0f + restitution) * relativeNormalSpeed / 2.0f;
+
+	velocityA.x += velocityChange * contactNormal.x;
+	velocityA.z += velocityChange * contactNormal.z;
+
+	velocityB.x -= velocityChange * contactNormal.x;
+	velocityB.z -= velocityChange * contactNormal.z;
+
+	motionA.SetVelocity(velocityA);
+	motionB.SetVelocity(velocityB);
 }
 
 //----------------
 // 固定物との反射
 //----------------
-static void BounceWall(GameObject& ball, BallMotionComponent& motion,
-	BoardVec2 n, float depth, float e)
+static void BounceWall(
+	GameObject& ball, BallMotionComponent& motion,
+	BoardVec2 contactNormal, float penetrationDepth, float restitution)
 {
-	PushOut(ball, n, depth);
-	BoardVec2 v = motion.GetVelocity();
-	if (Dot(v, n) >= 0)
-		return;
-	motion.SetVelocity(CollisionSystem::Reflect(v, n, e));
+	PushOut(ball, contactNormal, penetrationDepth);
+
+	BoardVec2 velocity = motion.GetVelocity();
+	
+	if (Dot(velocity, contactNormal) >= 0) return;
+
+	motion.SetVelocity(
+		CollisionSystem::Reflect(velocity, contactNormal, restitution));
+	
 	auto* pCounter = ball.GetComponent<ReflectionCounterComponent>();
 	if (pCounter && pCounter->IsEnabled())
+	{
 		pCounter->Increment();
+	}
 }
 
 
@@ -226,98 +334,145 @@ static void BounceWall(GameObject& ball, BallMotionComponent& motion,
 static bool CanDamage(GameRole attacker, GameRole target)
 {
 	if (attacker == GameRole::Player)
+	{
 		return target == GameRole::Enemy || target == GameRole::Boss;
+	}
+
 	return attacker == GameRole::Enemy && target == GameRole::Boss;
 }
 
 //--------------
 // 通知を作る
 //--------------
-static void AddNotice(GameObject& a, GameObject& b, std::vector<CollisionNotice>& out)
+static void AddNotice(
+	GameObject& objectA, GameObject& objectB,
+	vector<CollisionNotice>& outNotices)
 {
 	CollisionNotice notice;
-	notice.attacker = &a;
-	notice.target = &b;
-	auto* pCounter = a.GetComponent<ReflectionCounterComponent>();
+	notice.attacker = &objectA;
+	notice.target = &objectB;
+	auto* pCounter = objectA.GetComponent<ReflectionCounterComponent>();
 	if (pCounter && pCounter->IsEnabled())
+	{
 		notice.reflectionCount = pCounter->GetCount();
-	out.push_back(notice);
+	}
+	outNotices.push_back(notice);
 }
 
 //---------------
 // 一組を解決する
 //---------------
-//ここでは最初にResetを定義します。前回接触の記録をclear()で消します。
-//その後、SolvePairで一組の物体を処理します。
 void CollisionSystem::Reset()
 {
 	m_previousContacts.clear();
 }
 
-//一組の物体を処理する。Stepから呼ぶだけなのでここだけを先に読める
-void CollisionSystem::SolvePair(GameObject& a, GameObject& b,
-	std::vector<CollisionNotice>& out,
-	std::vector<HitPair>& current)
+// 一組の物体を処理する
+// Stepから呼ぶだけなのでここだけを先に読める
+void CollisionSystem::SolvePair(
+	GameObject& objectA, GameObject& objectB,
+	vector<CollisionNotice>& outNotices, vector<HitPair>& currentContacts)
 {
-	Contact c;
-	if (!Detect(a, b, c))
-		return;
-	auto* ma = GetMotion(a);
-	auto* mb = GetMotion(b);
-	if (!ma && !mb)
-		return;
+	Contact contact;
 
-	//前の更新でも接触していたペアにはダメージを送らない。
-	bool fresh = true;
+	if (!Detect(objectA, objectB, contact)) return;
+
+	auto* motionA = GetMotion(objectA);
+	auto* motionB = GetMotion(objectB);
+	if (!motionA && !motionB) return;
+
+	// 前の更新でも接触していたペアにはダメージを送らない
+	bool isNewContact = true;
 	for (const HitPair& pair : m_previousContacts)
 	{
-		if (pair.a == &a && pair.b == &b)
-			fresh = false;
+		if (pair.objectA == &objectA && pair.objectB == &objectB)
+		{
+			isNewContact = false;
+		}
 	}
-	current.push_back({ &a, &b });
+	currentContacts.push_back({ &objectA, &objectB });
 
-	const ColliderConfig& ca = a.GetComponent<ColliderComponent>()->GetConfig();
-	const ColliderConfig& cb = b.GetComponent<ColliderComponent>()->GetConfig();
-	float e = ca.restitution;
-	if (cb.restitution < e) e = cb.restitution;
-	BoardVec2 va, vb;
-	if (ma) va = ma->GetVelocity();
-	if (mb) vb = mb->GetVelocity();
-	float da = Dot(va, c.normal);
-	float db = Dot(vb, c.normal);
-	bool attackA = fresh && da - db < 0 && ma && da < 0 && CanDamage(ca.role, cb.role);
-	bool attackB = fresh && da - db < 0 && mb && db > 0 && CanDamage(cb.role, ca.role);
+	const ColliderConfig& configA =
+		objectA.GetComponent<ColliderComponent>()->GetConfig();
+	const ColliderConfig& configB =
+		objectB.GetComponent<ColliderComponent>()->GetConfig();
 
-	if (ma && mb)
-		BounceBalls(a, *ma, b, *mb, c, e);
-	else if (ma)
-		BounceWall(a, *ma, c.normal, c.penetration, e);
-	else if (mb)
+	float restitution = configA.restitution;
+	if (configB.restitution < restitution)
 	{
-		BoardVec2 n = { -c.normal.x, -c.normal.z };
-		BounceWall(b, *mb, n, c.penetration, e);
+		restitution = configB.restitution;
 	}
-	if (attackA)AddNotice(a, b, out);
-	if (attackB)AddNotice(b, a, out);
+	
+	BoardVec2 velocityA, velocityB;
+	if (motionA)
+	{
+		velocityA = motionA->GetVelocity();
+	}
+	if (motionB)
+	{
+		velocityB = motionB->GetVelocity();
+	}
+	float normalSpeedA = Dot(velocityA, contact.normal);
+	float normalSpeedB = Dot(velocityB, contact.normal);
+
+	bool attackA = isNewContact &&
+		normalSpeedA - normalSpeedB < 0 &&
+		motionA && normalSpeedA < 0 &&
+		CanDamage(configA.role, configB.role);
+
+	bool attackB = isNewContact &&
+		normalSpeedA - normalSpeedB < 0 &&
+		motionB && normalSpeedB > 0 &&
+		CanDamage(configB.role, configA.role);
+
+	if (motionA && motionB)
+	{
+		BounceBalls(objectA, *motionA,
+					objectB, *motionB, contact, restitution);
+	}
+	else if (motionA)
+	{
+		BounceWall(objectA, *motionA,
+				   contact.normal, contact.penetration, restitution);
+	}
+	else if (motionB)
+	{
+		BoardVec2 contactNormal =
+		{
+			-contact.normal.x, -contact.normal.z
+		};
+		BounceWall(objectB, *motionB,
+				   contactNormal, contact.penetration, restitution);
+	}
+	if (attackA)
+	{
+		AddNotice(objectA, objectB, outNotices);
+	}
+	if (attackB)
+	{
+		AddNotice(objectB, objectA, outNotices);
+	}
 }
 
 //---------------
 // 一組を解決する
 //---------------
-void CollisionSystem::Step(const std::vector<std::unique_ptr<GameObject>>& objects,
-	std::vector<CollisionNotice>& out)
+void CollisionSystem::Step(
+	const vector<unique_ptr<GameObject>>& objects,
+	vector<CollisionNotice>& outNotices)
 {
-	out.clear();
-	std::vector<HitPair> current;
+	outNotices.clear();
+
+	vector<HitPair> currentContacts;
 	//iとjの組み合わせを一回ずつ調べる。
 	for (size_t i = 0; i < objects.size(); ++i)
 	{
 		for (size_t j = i + 1; j < objects.size(); ++j)
 		{
-			if (!objects[i] || !objects[j])
-				continue;
-			SolvePair(*objects[i], *objects[j], out, current);
+			if (!objects[i] || !objects[j]) continue;
+			SolvePair(*objects[i], *objects[j], outNotices, currentContacts);
 		}
 	}
-	m_previousContacts = current;
+
+	m_previousContacts = currentContacts;
 }

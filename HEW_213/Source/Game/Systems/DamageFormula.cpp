@@ -2,19 +2,36 @@
 #include <cmath>
 #include <climits>
 
-int DamageFormula::Calculate(float baseDamege, float multiplier, int reflectionCount)
-{
-	if (!std::isfinite(baseDamege) || !std::isfinite(multiplier)) return 0;
-	if (baseDamege <= 0 || multiplier < 0) return 0;
+using namespace std;
 
+int DamageFormula::Calculate(float baseDamage,
+							 float reflectionMultiplier,
+							 int reflectionCount)
+{
+	// 異常な値ならダメージを与えない
+	if (!isfinite(baseDamage) || !isfinite(reflectionMultiplier))
+	{
+		return 0;
+	}
+	// ダメージがマイナスなら 0 を返す
+	if (baseDamage <= 0 || reflectionMultiplier < 0)
+	{
+		return 0;
+	}
+	// 反射回数がマイナスにならないようにする
 	if (reflectionCount < 0)
 	{
 		reflectionCount = 0;
 	}
 
-	float damage = baseDamege * (1.0f + multiplier * reflectionCount);
-
-	//intに入らない値はint内にとどめる
-	if (static_cast<double>(damage) >= INT_MAX) return INT_MAX;
-	return static_cast<int>(damage);
+	// ダメージの計算
+	float calculateDamage = 
+		2.0f * baseDamage * 
+		(pow(reflectionMultiplier, reflectionCount + 1) - 1.0f);
+	// 最大ダメージが2,147,483,647ダメージを超えないようにする
+	if (static_cast<double>(calculateDamage) >= INT_MAX)
+	{
+		return INT_MAX;
+	}
+	return static_cast<int>(calculateDamage);
 }

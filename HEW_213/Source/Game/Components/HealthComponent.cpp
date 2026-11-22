@@ -2,7 +2,9 @@
 #include "Engine/Scene/GameObject.h"
 #ifdef _DEBUG
 #include "imgui.h"
+using namespace ImGui;
 #endif // _DEBUG
+
 
 HealthComponent::HealthComponent(GameObject* pOwner) : Component(pOwner)
 {
@@ -19,7 +21,14 @@ void HealthComponent::Reset(int maxHP)
 }
 int HealthComponent::ApplyDamage(int amount)
 {
-	if (amount <= 0 || m_hp == 0) return 0;
+	// 与えるダメージが0以下、または現在のHPが0だったら
+	// 与えるダメージを0として返す
+	if (amount <= 0 || m_hp == 0)
+	{
+		return 0;
+	}
+	// 与えるダメージが現在のHPより大きかったら
+	// 現在のHPと同じ値を返す。
 	if (amount > m_hp)
 	{
 		amount = m_hp;
@@ -49,11 +58,11 @@ std::unique_ptr<Component>HealthComponent::Clone(GameObject* pNewOwner) const
 #ifdef _DEBUG
 void HealthComponent::DrawDebugInspector()
 {
-	int hp = m_maxHP;
-	if (ImGui::DragInt("Max HP", &hp, 1, 1, 100000) && hp > 0)
+	int maxHP = m_maxHP;
+	if (DragInt("最大HP", &maxHP, 1, 1, 100000) && maxHP > 0)
 	{
-		Reset(hp);
+		Reset(maxHP);
 	}
-	ImGui::Text("HP: &d / %d", m_hp, m_maxHP);
+	Text("HP: %d / %d", m_hp, m_maxHP);
 }
 #endif // _DEBUG

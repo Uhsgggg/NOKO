@@ -3,6 +3,7 @@
 class DamageFormula
 {
 public:
-	static int Calculate(
-		float baseDamage, float multiplier, int reflectionCount);
+	static int Calculate(float baseDamage,
+						 float bonusRatePerReflection,
+						 int reflectionCount);
 };

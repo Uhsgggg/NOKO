@@ -20,7 +20,7 @@ namespace
 	bool g_cancelled = false;
 	// kMouseSensitivity … 1カウント当たりのワールド単位
 	//						最大ドラッグ3なら、約300カウント。
-	const float kMouseSensitivity = 0.01f;
+	constexpr float kMouseSensitivity = 0.01f;
 }
 
 bool BoardPointer::RegisterMouse(HWND hWnd)

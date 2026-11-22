@@ -19,21 +19,21 @@ namespace
 {
 	// JSONから3つのfloat値を読み込み
 	void ReadVector3(
-		const json& value,
-		float result[3],
-		const char* field)
+		const json& jsonValue,
+		float outValue[3],
+		const char* fieldName)
 	{
-		if (!value.is_array() || value.size() != 3)
+		if (!jsonValue.is_array() || jsonValue.size() != 3)
 		{
 			throw runtime_error(
-				string(field) +
+				string(fieldName) +
 				"must contain 3 numbers."
 			);
 		}
 
 		for (int i = 0; i < 3; ++i)
 		{
-			result[i] = value.at(i).get<float>();
+			outValue[i] = jsonValue.at(i).get<float>();
 		}
 	}
 }
@@ -51,7 +51,7 @@ ComponentRegistry::GetEntries()
 		//========================================
 		{
 			"AutoRotate",  // JSON保存用のID
-			"Auto Rotate", // Inspectorの表示名
+			"自動回転", // Inspectorの表示名
 
 			// 生成
 			[](GameObject* pOwner)->unique_ptr<Component>
@@ -67,7 +67,7 @@ ComponentRegistry::GetEntries()
 			},
 
 			// 保存
-			[](const Component& base, json& data)
+			[](const Component& baseComponent, json& jsonData)
 			{
 				// 今回の場合、
 				// 〇dynamic_cast … 実際に指定した派生型へ
@@ -76,12 +76,12 @@ ComponentRegistry::GetEntries()
 				// 　　　　　　　　　実際の派生型を実行時に確認しない。
 				// これは登録ミスによって別のComponentが渡された場合、
 				// 安全に失敗するとは限らないため。
-				const auto& c =
-					dynamic_cast<const AutoRotateComponent&>(base);
+				const auto& autoRotate =
+					dynamic_cast<const AutoRotateComponent&>(baseComponent);
 
-				const float* speed = c.GetRotationSpeed();
+				const float* speed = autoRotate.GetRotationSpeed();
 
-				data["speed"] = {
+				jsonData["speed"] = {
 					speed[0],
 					speed[1],
 					speed[2]
@@ -89,20 +89,20 @@ ComponentRegistry::GetEntries()
 			},
 
 			// 読み込み
-			[](Component& base, const json& data)
+			[](Component& baseComponent, const json& jsonData)
 			{
 				float speed[3];
 
 				ReadVector3(
-					data.at("speed"),
+					jsonData.at("speed"),
 					speed,
 					"speed"
 				);
 
-				auto& c =
-					dynamic_cast<AutoRotateComponent&>(base);
+				auto& autoRotate =
+					dynamic_cast<AutoRotateComponent&>(baseComponent);
 
-				c.SetRotationSpeed(
+				autoRotate.SetRotationSpeed(
 					speed[0],
 					speed[1],
 					speed[2]
@@ -115,7 +115,7 @@ ComponentRegistry::GetEntries()
 		//========================================
 		{
 			"Move",
-			"Move",
+			"自動移動",
 
 			// 生成
 			[](GameObject* pOwner)->unique_ptr<Component>
@@ -131,14 +131,14 @@ ComponentRegistry::GetEntries()
 			},
 
 			// 保存
-			[](const Component& base, json& data)
+			[](const Component& baseComponent, json& jsonData)
 			{
-				const auto& c =
-					dynamic_cast<const MoveComponent&>(base);
+				const auto& moveComponent =
+					dynamic_cast<const MoveComponent&>(baseComponent);
 
-				const float* velocity = c.GetVelocity();
+				const float* velocity = moveComponent.GetVelocity();
 
-				data["velocity"] = {
+				jsonData["velocity"] = {
 					velocity[0],
 					velocity[1],
 					velocity[2]
@@ -146,20 +146,20 @@ ComponentRegistry::GetEntries()
 			},
 
 			// 読み込み
-			[](Component& base, const json& data)
+			[](Component& baseComponent, const json& jsonData)
 			{
 				float velocity[3];
 
 				ReadVector3(
-					data.at("velocity"),
+					jsonData.at("velocity"),
 					velocity,
 					"velocity"
 				);
 
-				auto& c =
-					dynamic_cast<MoveComponent&>(base);
+				auto& moveComponent =
+					dynamic_cast<MoveComponent&>(baseComponent);
 
-				c.SetVelocity(
+				moveComponent.SetVelocity(
 					velocity[0],
 					velocity[1],
 					velocity[2]
@@ -172,7 +172,7 @@ ComponentRegistry::GetEntries()
 		//========================================
 		{
 			"BallMotion",
-			"Ball Motion",
+			"発射移動",
 
 			// 生成
 			[](GameObject* pOwner)->unique_ptr<Component>
@@ -181,26 +181,26 @@ ComponentRegistry::GetEntries()
 			},
 
 			// 保存
-			[](const Component& base, json& data)
+			[](const Component& baseComponent, json& jsonData)
 			{
-				const auto& c =
-					dynamic_cast<const BallMotionComponent&>(base);
+				const auto& ballMotion =
+					dynamic_cast<const BallMotionComponent&>(baseComponent);
 
-				data["deceleration"] = c.GetDeceleration();
-				data["stopSpeed"] = c.GetStopSpeed();
-				data["maxSpeed"] = c.GetMaxSpeed();
+				jsonData["deceleration"] = ballMotion.GetDeceleration();
+				jsonData["stopSpeed"] = ballMotion.GetStopSpeed();
+				jsonData["maxSpeed"] = ballMotion.GetMaxSpeed();
 			},
 
 			// 読み込み
-			[](Component& base, const json& data)
+			[](Component& baseComponent, const json& jsonData)
 			{
-				auto& c =
-					dynamic_cast<BallMotionComponent&>(base);
+				auto& ballMotion =
+					dynamic_cast<BallMotionComponent&>(baseComponent);
 
-				c.Configure(
-					data.at("deceleration").get<float>(),
-					data.at("stopSpeed").get<float>(),
-					data.at("maxSpeed").get<float>()
+				ballMotion.Configure(
+					jsonData.at("deceleration").get<float>(),
+					jsonData.at("stopSpeed").get<float>(),
+					jsonData.at("maxSpeed").get<float>()
 				);
 			}
 		},
@@ -210,7 +210,7 @@ ComponentRegistry::GetEntries()
 		//========================================
 		{
 			"PlayerLaunch",
-			"Player Launch",
+			"プレイヤー発射",
 
 			// 生成
 			[](GameObject* pOwner)->unique_ptr<Component>
@@ -219,27 +219,55 @@ ComponentRegistry::GetEntries()
 			},
 
 			// 保存
-			[](const Component& base, json& data)
+			[](const Component& baseComponent, json& jsonData)
 			{
-				const auto& c =
-					dynamic_cast<const PlayerLaunchComponent&>(base);
+				const auto& playerLaunch =
+					dynamic_cast<const PlayerLaunchComponent&>(baseComponent);
 
-				data["minDrag"] = c.GetMinDrag();
-				data["maxDrag"] = c.GetMaxDrag();
-				data["maxSpeed"] = c.GetMaxSpeed();
+				jsonData["minDrag"] = playerLaunch.GetMinDrag();
+				jsonData["maxDrag"] = playerLaunch.GetMaxDrag();
+				jsonData["maxSpeed"] = playerLaunch.GetMaxSpeed();
 			},
 
 			// 読み込み
-			[](Component& base, const json& data)
+			[](Component& baseComponent, const json& jsonData)
 			{
-				auto& c =
-					dynamic_cast<PlayerLaunchComponent&>(base);
+				auto& playerLaunch =
+					dynamic_cast<PlayerLaunchComponent&>(baseComponent);
 
-				c.Configure(
-					data.at("minDrag").get<float>(),
-					data.at("maxDrag").get<float>(),
-					data.at("maxSpeed").get<float>()
+				playerLaunch.Configure(
+					jsonData.at("minDrag").get<float>(),
+					jsonData.at("maxDrag").get<float>(),
+					jsonData.at("maxSpeed").get<float>()
 				);
+			}
+		},
+
+		//========================================
+		// PlayerInput
+		//========================================
+		{
+			"PlayerInput",
+			"プレイヤー入力",
+
+			// 生成
+			[](GameObject* pOwner)->unique_ptr<Component>
+			{
+				return make_unique<PlayerInputComponent>(pOwner);
+			},
+
+			// 保存
+			[](const Component& baseComponent, json& jsonData)
+			{
+				(void)baseComponent;
+				(void)jsonData;
+			},
+
+			// 読み込み
+			[](Component& baseComponent, const json& jsonData)
+			{
+				(void)baseComponent;
+				(void)jsonData;
 			}
 		},
 
@@ -248,7 +276,7 @@ ComponentRegistry::GetEntries()
 		//========================================
 		{
 			"ReflectionCounter",
-			"Reflection Counter",
+			"反発回数カウンター",
 
 			// 生成
 			[](GameObject* pOwner)->unique_ptr<Component>
@@ -257,17 +285,17 @@ ComponentRegistry::GetEntries()
 			},
 
 			// 保存
-			[](const Component& base, json& data)
+			[](const Component& baseComponent, json& jsonData)
 			{
-				(void)base;
-				(void)data;
+				(void)baseComponent;
+				(void)jsonData;
 			},
 
 			// 読み込み
-			[](Component& base, const json& data)
+			[](Component& baseComponent, const json& jsonData)
 			{
-				(void)base;
-				(void)data;
+				(void)baseComponent;
+				(void)jsonData;
 			}
 		},
 
@@ -276,7 +304,7 @@ ComponentRegistry::GetEntries()
 		//========================================
 		{
 			"Health",
-			"Health",
+			"体力",
 
 			// 生成
 			[](GameObject* pOwner)->unique_ptr<Component>
@@ -285,21 +313,21 @@ ComponentRegistry::GetEntries()
 			},
 
 			// 保存
-			[](const Component& base, json& data)
+			[](const Component& baseComponent, json& jsonData)
 			{
-				const auto& c =
-					dynamic_cast<const HealthComponent&>(base);
+				const auto& health =
+					dynamic_cast<const HealthComponent&>(baseComponent);
 
-				data["maxHP"] = c.GetMaxHP();
+				jsonData["maxHP"] = health.GetMaxHP();
 			},
 
 			// 読み込み
-			[](Component& base, const json& data)
+			[](Component& baseComponent, const json& jsonData)
 			{
-				auto& c =
-					dynamic_cast<HealthComponent&>(base);
+				auto& health =
+					dynamic_cast<HealthComponent&>(baseComponent);
 
-				c.Reset(data.at("maxHP").get<int>());
+				health.Reset(jsonData.at("maxHP").get<int>());
 			}
 		},
 
@@ -308,7 +336,7 @@ ComponentRegistry::GetEntries()
 		//========================================
 		{
 			"Collider",
-			"Collider",
+			"当たり判定",
 
 			// 生成
 			[](GameObject* pOwner)->unique_ptr<Component>
@@ -317,37 +345,47 @@ ComponentRegistry::GetEntries()
 			},
 
 			// 保存
-			[](const Component& base, json& data)
+			[](const Component& baseComponent, json& jsonData)
 			{
-				const auto& c =
-					dynamic_cast<const ColliderComponent&>(base);
+				const auto& collider =
+					dynamic_cast<const ColliderComponent&>(baseComponent);
 
-				const auto& v = c.GetConfig();
-				data["role"] = int(v.role);
-				data["shape"] = int(v.shape);
-				data["shape"] = v.radius;
-				data["halfExtent"] = {v.halfExtent.x, v.halfExtent.z};
-				data["restitution"] = v.restitution;
+				const auto& colliderConfig = collider.GetConfig();
+				jsonData["role"] = int(colliderConfig.role);
+				jsonData["shape"] = int(colliderConfig.shape);
+				jsonData["radius"] = colliderConfig.radius;
+				jsonData["halfExtent"] = { 
+					colliderConfig.halfExtent.x,
+					colliderConfig.halfExtent.z
+				};
+				jsonData["restitution"] = colliderConfig.restitution;
 			},
 
 			// 読み込み
-			[](Component& base, const json& data)
+			[](Component& baseComponent, const json& jsonData)
 			{
-				auto& c =
-					dynamic_cast<ColliderComponent&>(base);
+				auto& collider =
+					dynamic_cast<ColliderComponent&>(baseComponent);
 
-				ColliderConfig v;
-				v.role = GameRole(data.at("role").get<int>());
-				v.shape = ColliderShape(data.at("shape").get<int>());
-				v.radius = data.at("radius").get<float>();
-				const auto& h = data.at("halfExtent");
-				if (!h.is_array() || h.size() != 2)
+				ColliderConfig colliderConfig;
+
+				colliderConfig.role = GameRole(jsonData.at("role").get<int>());
+				colliderConfig.shape = ColliderShape(jsonData.at("shape").get<int>());
+				colliderConfig.radius = jsonData.at("radius").get<float>();
+				const auto& halfExtentJson = jsonData.at("halfExtent");
+				
+				if (!halfExtentJson.is_array() ||
+					halfExtentJson.size() != 2)
 				{
 					throw runtime_error("Invalid halfExtent");
 				}
-				v.halfExtent = { h.at(0).get<float>(), h.at(1).get<float>() };
-				v.restitution = data.at("restitution").get<float>();
-				c.Configure(v);
+
+				colliderConfig.halfExtent = {
+					halfExtentJson.at(0).get<float>(),
+					halfExtentJson.at(1).get<float>() 
+				};
+				colliderConfig.restitution = jsonData.at("restitution").get<float>();
+				collider.Configure(colliderConfig);
 			}
 		}
 	};

@@ -12,33 +12,33 @@ PlayerInputComponent::PlayerInputComponent(GameObject* pOwner) : Component(pOwne
 }
 
 //マウス情報を受け取り、ドラッグ状態だけを記録する
-void PlayerInputComponent::Sample(const PointerFrame& frame, bool canAim)
+void PlayerInputComponent::Sample(const PointerFrame& pointerFrame, bool canAim)
 {
 	m_aim.released = false;
-	if (!frame.valid || !canAim)
+	if (!pointerFrame.valid || !canAim)
 	{
 		Cancel();
 		return;
 	}
 
-	if (frame.pressed)
+	if (pointerFrame.pressed)
 	{
 		Cancel();
 		//ゲーム画面のどこからでもドラッグ開始
 		m_aim.dragging = true;
-		m_aim.anchor   = frame.point;
-		m_aim.point    = frame.point;
+		m_aim.anchor   = pointerFrame.point;
+		m_aim.point    = pointerFrame.point;
 	}
 
 	if (!m_aim.dragging) return;
 
-	m_aim.point = frame.point;
-	if (frame.released)
+	m_aim.point = pointerFrame.point;
+	if (pointerFrame.released)
 	{
 		m_aim.dragging = false;
 		m_aim.released = true;
 	}
-	else if (!frame.held)
+	else if (!pointerFrame.held)
 	{
 		Cancel();
 	}
@@ -64,6 +64,6 @@ std::unique_ptr<Component> PlayerInputComponent::Clone(GameObject* pNewOwner) co
 #ifdef _DEBUG
 void PlayerInputComponent::DrawDebugInspector()
 {
-	ImGui::TextUnformatted("NO saved settings");
+	ImGui::TextUnformatted("設定する項目はありません");
 }
 #endif

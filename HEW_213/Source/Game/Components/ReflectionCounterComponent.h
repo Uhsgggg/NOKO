@@ -14,7 +14,7 @@ public:
 
     const char *GetTypeName() const override
     { 
-        return "ReflectionCounter";
+        return "反射回数カウンター";
     }
 
     std::unique_ptr<Component> Clone(
@@ -29,5 +29,5 @@ public:
     int GetCount() const;
 
 private:
-    int m_count = 0;
+    int m_reflectionCount = 0;
 };

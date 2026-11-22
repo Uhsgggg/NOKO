@@ -92,7 +92,7 @@ namespace
 		float rightWidth = layout.size.x * 0.26f;
 
 		if (rightWidth < 190.0f) rightWidth = 190.0f;
-		if (rightWidth > 270.0f) rightWidth = 270.0f;
+		if (rightWidth > 250.0f) rightWidth = 250.0f;
 
 		layout.inspectorWidth = rightWidth;
 
@@ -253,22 +253,21 @@ namespace
 		Transform& transform = pObject->GetTransform();
 
 		PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0.0f, 5.0f));
-		if (CollapsingHeader(
-			"Transform",
+		if (("Transform",
 			ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			DragFloat3(
-				u8"  位置",
+				"  位置",
 				transform.position,
 				0.05f
 			);
 			DragFloat3(
-				u8"  回転",
+				"  回転",
 				transform.rotation,
 				1.0f
 			);
 			DragFloat3(
-				u8"  拡縮",
+				"  拡縮",
 				transform.scale,
 				0.05f,
 				0.01f,
@@ -277,7 +276,7 @@ namespace
 		}
 		PopStyleVar();
 
-		if (Button(u8"保存したデータを読み込む"))
+		if (Button("保存したデータを読み込む"))
 		{
 			pObject->ResetTransform();
 		}
@@ -300,7 +299,7 @@ namespace
 		// コンポーネントが1つもない場合
 		if (components.empty())
 		{
-			TextDisabled(u8"コンポーネントが設定されていません");
+			TextDisabled("コンポーネントが設定されていません");
 		}
 
 		// コンポーネント一覧を表示
@@ -314,7 +313,7 @@ namespace
 			// 有効・無効の切り替え
 			bool enabled = pComponent->IsEnabled();
 
-			if (Checkbox(u8"有効", &enabled))
+			if (Checkbox("有効", &enabled))
 			{
 				pComponent->SetEnabled(enabled);
 			}
@@ -322,7 +321,7 @@ namespace
 			SameLine();
 
 			// 削除ボタン
-			if (SmallButton(u8"削除"))
+			if (SmallButton("削除"))
 			{
 				// ※ここではまだ削除しない
 				// vectorを順番に見ている途中で、そのvectorの要素を
@@ -336,7 +335,18 @@ namespace
 				pComponent->GetTypeName(),
 				ImGuiTreeNodeFlags_DefaultOpen))
 			{
+				const float availableWidth =
+					GetContentRegionAvail().x;
+
+				float inputWidth = availableWidth * 0.55f;
+
+				inputWidth = 100.0f;
+
+				PushItemWidth(inputWidth);
+
 				pComponent->DrawDebugInspector();
+
+				PopItemWidth();
 			}
 
 			Separator();
@@ -354,7 +364,7 @@ namespace
 		// Add Component
 		//========================================
 		// ボタンを押すとメニューを開く
-		if (Button(u8"コンポーネントを追加する"))
+		if (Button("コンポーネントを追加する"))
 		{
 			OpenPopup("AddComponentPopup");
 		}
@@ -665,7 +675,7 @@ EditorCommand DebugEditor::DrawScene(
 	//====================
 	// Create
 	//====================
-	if (Button(u8"+ 生成"))
+	if (Button("+ 生成"))
 	{
 		OpenPopup("CreateObjectPopup");
 	}
@@ -753,7 +763,7 @@ EditorCommand DebugEditor::DrawScene(
 		s_selectedObjectIndex >= 0 &&
 		s_selectedObjectIndex < objectCount;
 
-	if (Button(u8"複製") && hasSelection)
+	if (Button("複製") && hasSelection)
 	{
 		command.action = EditorAction::Duplicate;
 		command.objectIndex = s_selectedObjectIndex;
@@ -764,7 +774,7 @@ EditorCommand DebugEditor::DrawScene(
 	//====================
 	SameLine();
 
-	if (Button(u8"削除") && hasSelection)
+	if (Button("削除") && hasSelection)
 	{
 		command.action = EditorAction::Delete;
 		command.objectIndex = s_selectedObjectIndex;
@@ -793,7 +803,7 @@ EditorCommand DebugEditor::DrawScene(
 	Separator();
 
 	// 保存ボタン
-	if (Button(u8"シーンを保存"))
+	if (Button("シーンを保存"))
 	{
 		command.action = EditorAction::SaveScene;
 	}
@@ -801,7 +811,7 @@ EditorCommand DebugEditor::DrawScene(
 	SameLine();
 
 	// 読み込みボタン
-	if (Button(u8"シーンを読み込む"))
+	if (Button("シーンを読み込む"))
 	{
 		command.action = EditorAction::LoadScene;
 	}
@@ -838,7 +848,7 @@ EditorCommand DebugEditor::DrawScene(
 
 			// Enterが押されたらtrue
 			bool confirmed = InputText(
-				u8"名前変更",
+				"名前変更",
 				renameBuffer,
 				sizeof(renameBuffer),
 				ImGuiInputTextFlags_EnterReturnsTrue
@@ -884,7 +894,7 @@ EditorCommand DebugEditor::DrawScene(
 
 			if (renameError && renamingIndex == i)
 			{
-				TextDisabled(u8"名前が設定されていない、\nもしくは重複しています");
+				TextDisabled("名前が設定されていない、\nもしくは重複しています");
 			}
 		}
 		//====================
@@ -965,7 +975,7 @@ EditorCommand DebugEditor::DrawScene(
 	//========================================
 	// デバッググリッド
 	//========================================
-	Checkbox(u8"グリッドを有効", &showGrid);
+	Checkbox("グリッドを有効", &showGrid);
 
 	Separator();
 
@@ -979,7 +989,7 @@ EditorCommand DebugEditor::DrawScene(
 		{
 			// オブジェクト名
 			Text(
-				u8"オブジェクト名: %s",
+				"オブジェクト名: %s",
 				pObject->GetName().c_str()
 			);
 
@@ -997,7 +1007,7 @@ EditorCommand DebugEditor::DrawScene(
 	}
 	else
 	{
-		Text(u8"オブジェクトが選択されていません");
+		Text("オブジェクトが選択されていません");
 	}
 
 	End();
@@ -1060,7 +1070,7 @@ void DebugEditor::DrawPlayCamera(
 	// Positionを編集
 	//========================================
 	bool positionChanged = DragFloat3(
-		u8"座標",
+		"座標",
 		&position.x,
 		0.1f
 	);
@@ -1069,7 +1079,7 @@ void DebugEditor::DrawPlayCamera(
 	// Lookを編集
 	//========================================
 	bool lookChanged = DragFloat3(
-		u8"注視点",
+		"注視点",
 		&look.x,
 		0.1f
 	);
@@ -1101,7 +1111,7 @@ void DebugEditor::DrawPlayCamera(
 	//========================================
 	// Editカメラの視点をコピー
 	//========================================
-	if (Button(u8"※現在のカメラ位置をコピー"))
+	if (Button("※現在のカメラ位置をコピー"))
 	{
 		playCamera.SetPose(
 			editCamera.GetPos(),
@@ -1110,7 +1120,7 @@ void DebugEditor::DrawPlayCamera(
 	}
 
 	TextDisabled(
-		u8"F1を押してゲーム画面に移行"
+		"F1を押してゲーム画面に移行"
 	);
 
 	End();

@@ -10,9 +10,11 @@ using namespace std;
 //========================================
 // コンストラクタ
 //========================================
-MoveComponent::MoveComponent(GameObject* pOwner,float x, float y, float z)
+MoveComponent::MoveComponent(
+	GameObject* pOwner, 
+	float velocityX, float velocityY, float velocityZ)
 	: Component(pOwner)
-	, m_velocity{ x, y, z }
+	, m_velocity{ velocityX, velocityY, velocityZ }
 {
 }
 
@@ -56,11 +58,11 @@ unique_ptr<Component> MoveComponent::Clone(
 //========================================
 // 移動速度を変更
 //========================================
-void MoveComponent::SetVelocity(float x, float y, float z)
+void MoveComponent::SetVelocity(float velocityX, float velocityY, float velocityZ)
 {
-	m_velocity[0] = x;
-	m_velocity[1] = y;
-	m_velocity[2] = z;
+	m_velocity[0] = velocityX;
+	m_velocity[1] = velocityY;
+	m_velocity[2] = velocityZ;
 }
 
 #ifdef _DEBUG
@@ -71,7 +73,7 @@ void MoveComponent::DrawDebugInspector()
 {
 	using namespace ImGui;
 	DragFloat3(
-		"Velocity",
+		"速度",
 		m_velocity,
 		0.05f
 	);

@@ -15,7 +15,7 @@ public:
 
 	const char *GetTypeName() const override
 	{
-		return "Collider";
+		return "“–‚½‚è”»’è";
 	}
 
 	std::unique_ptr<Component> Clone(
@@ -34,4 +34,7 @@ public:
 
 private:
 	ColliderConfig m_config;
+#ifdef _DEBUG
+	int m_nDebugHitFrames = 0;
+#endif
 };

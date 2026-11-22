@@ -68,12 +68,12 @@ std::unique_ptr<Component> PlayerLaunchComponent::Clone(GameObject* pNewOwner) c
 #ifdef _DEBUG
 void PlayerLaunchComponent::DrawDebugInspector()
 {
-	float a = m_minDrag;
-	float b = m_maxDrag;
-	float c = m_maxSpeed;
-	ImGui::DragFloat("Min drag",     &a, 0.05f, 0,     10);
-	ImGui::DragFloat("Max drag",     &b, 0.1f,  0.01f, 20);
-	ImGui::DragFloat("Launch speed", &c, 0.1f, 0.01f, 100);
-	Configure(a, b, c);
+	float minD = m_minDrag;
+	float maxD = m_maxDrag;
+	float maxS = m_maxSpeed;
+	ImGui::DragFloat("最小ドラッグ距離",&minD, 0.05f, 0,     10);
+	ImGui::DragFloat("最大ドラッグ距離",&maxD, 0.1f,  0.01f, 20);
+	ImGui::DragFloat("最大発射速度", &maxS, 0.1f, 0.01f, 100);
+	Configure(minD, maxD, maxS);
 }
 #endif

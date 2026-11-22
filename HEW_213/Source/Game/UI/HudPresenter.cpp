@@ -1,9 +1,11 @@
 #include "HudPresenter.h"
 #include <cmath>
 
+using namespace std;
+
 static float LimitRation(float ratio)
 {
-	if (!std::isfinite(ratio) || ratio < 0) return 0;
+	if (!isfinite(ratio) || ratio < 0) return 0;
 	if (ratio > 1) return 1;
 	return ratio;
 }
@@ -12,11 +14,17 @@ HudView HudPresenter::Build(const HudInput& input, float maxDrag)
 {
 	HudView view;
 	int shots = input.remainingShots;
-	int enemies = input.nextEnemyCount;
-	if (shots < 0)shots = 0;
-	if (enemies < 0)enemies = 0;
-	view.shotsText = std::to_string(shots);
-	view.nextEnemiesText = std::to_string(enemies);
+	int enemies = input.shotsUntilNextWave;
+	if (shots < 0)
+	{
+		shots = 0;
+	}
+	if (enemies < 0)
+	{
+		enemies = 0;
+	}
+	view.shotsText = to_string(shots);
+	view.shotsUntilNextWaveText = to_string(enemies);
 
 	if (input.bossMaxHP > 0)
 	{
@@ -24,23 +32,25 @@ HudView HudPresenter::Build(const HudInput& input, float maxDrag)
 		view.bossRatio = LimitRation(ratio);
 	}
 
-	for (float hp:input.enemyHPRatios)
+	for (float hp : input.enemyHPRatios)
 	{
-		float ratio = LimitRation(hp);
-		view.enemyRatios.push_back(ratio);
+		const float hpRatio = LimitRation(hp);
+		view.enemyRatios.push_back(hpRatio);
 		HudColor color;
-		if (ratio > 0.5f)
-		{
-			color = { 0,1,0,1 }; // —Î
-		}
-		else if (ratio > 0.25f)
-		{
-			color = { 1,1,0,1 }; // ‰©
+
+		if (hpRatio >= 0.5f)
+		{// HP 100%～50%：緑→黄
+			color.r = (1.0f - hpRatio) * 2.0f;
+			color.g = 1.0f;
 		}
 		else
-		{
-			color = { 1,0,0,1 }; // Ô
+		{// HP 50%～0%：黄→赤
+			color.r = 1.0f;
+			color.g = hpRatio * 2.0f;
 		}
+
+		color.b = 0.0f;
+		color.a = 1.0f;
 
 		view.enemyColors.push_back(color);
 	}
@@ -49,8 +59,9 @@ HudView HudPresenter::Build(const HudInput& input, float maxDrag)
 	{
 		float x = input.aim.anchor.x - input.aim.point.x;
 		float z = input.aim.anchor.z - input.aim.point.z;
-		float length = std::sqrt(x * x + z * z);
-		if (std::isfinite(length) && length > 0)
+		float length = sqrt(x * x + z * z);
+
+		if (isfinite(length) && length > 0)
 		{
 			if (length > maxDrag)
 			{
@@ -59,7 +70,7 @@ HudView HudPresenter::Build(const HudInput& input, float maxDrag)
 			}
 			view.arrowStart = input.playerPosition;
 			view.arrowEnd.x = view.arrowStart.x + x;
-			view.arrowEnd.z = view.arrowStart.z + x;
+			view.arrowEnd.z = view.arrowStart.z + z;
 			view.showArrow = true;	
 		}
 	}

@@ -12,24 +12,24 @@ struct BoardVec2
 	float x = 0.0f;
 	float z = 0.0f;
 };
-enum class GameRole
+enum class GameRole // 役職
 {
 	Player,
 	Enemy,
 	Boss,
 	Wall,
 };
-enum class ColliderShape
+enum class ColliderShape // 形状の当たり判定
 {
 	Sphere,
 	Box
 };
-struct ColliderConfig
+struct ColliderConfig // 当たり判定の設定
 {
 	GameRole role = GameRole::Wall;
 	ColliderShape shape = ColliderShape::Box;
 	float radius = 0.5f;
-	BoardVec2 halfExtent = { 0.5f,0.5f };
+	BoardVec2 halfExtent = { 0.5f,0.5f }; // 横・奥の半サイズ
 	float restitution = 1.0f;
 };
 struct PointerFrame
@@ -49,8 +49,8 @@ struct AimState
 };
 struct Contact
 {
-	GameObject* a = nullptr; // 非所有・この物理ステップ内のみ
-	GameObject* b = nullptr;
+	GameObject* objectA = nullptr; // 非所有・この物理ステップ内のみ
+	GameObject* objectB = nullptr;
 	BoardVec2 normal; // B→A、単位長
 	float penetration = 0.0f; // 重なった距離
 };
@@ -63,7 +63,7 @@ struct CollisionNotice
 struct HudInput
 {
 	int remainingShots = 0;
-	int nextEnemyCount = 0;
+	int shotsUntilNextWave = 0;
 	int bossHP = 0;
 	int bossMaxHP = 0;
 	std::vector<float> enemyHPRatios; // SceneGameの該当フレームの敵順
@@ -76,7 +76,7 @@ struct HudColor
 };
 struct HudView
 {
-	std::string shotsText, nextEnemiesText;
+	std::string shotsText, shotsUntilNextWaveText;
 	float bossRatio = 0.0f;
 	std::vector<float> enemyRatios;
 	std::vector<HudColor> enemyColors; // 同じ敵順、描画はリード側

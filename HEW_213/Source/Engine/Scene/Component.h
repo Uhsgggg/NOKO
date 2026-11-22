@@ -1,5 +1,12 @@
 #pragma once
 
+// 日本語を含む文字列リテラルをUTF-8で出力する
+// ただ、どうやら古い書き方らしくて、とんでもない
+// エラーが出たらこいつのせい。って覚えとけよ未来の俺
+#ifdef _MSC_VER
+#pragma execution_character_set("utf-8")
+#endif
+
 #include <memory>
 
 // 前方宣言

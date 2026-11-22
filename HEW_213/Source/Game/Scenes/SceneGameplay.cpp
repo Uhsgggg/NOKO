@@ -34,8 +34,8 @@ namespace
 	// プロトタイプの仮仕様。企画確定後に変更するところ
 	constexpr int kShots = 10;
 	constexpr int kWaveInterval = 3;
-	constexpr float kBaseDamage = 3.0f;
-	constexpr float kMultiplier = 0.5f;
+	constexpr float kBaseDamage = 10.0f;
+	constexpr float kReflectionMultiplier = 1.35f;
 	template <class T> T* Enabled(GameObject& o)
 	{
 		T* p = o.GetComponent<T>();
@@ -90,6 +90,7 @@ void SceneGame::ResetGamePlay()
 	m_turn.Reset(kShots);
 	m_boardPointer.Reset();
 	m_result = 0;
+	m_completedShots = 0;
 	m_spawnSerial = 0;
 	m_hasBoss = false;
 	m_hadEnemies = false;
@@ -125,8 +126,8 @@ void SceneGame::ResetGamePlay()
 	if (pPlayer)
 	{
 		m_gameReady = Enabled<PlayerInputComponent>(*pPlayer) &&
-					  Enabled<PlayerLaunchComponent>(*pPlayer) &&
-					  Enabled<BallMotionComponent>(*pPlayer);
+			Enabled<PlayerLaunchComponent>(*pPlayer) &&
+			Enabled<BallMotionComponent>(*pPlayer);
 	}
 	if (!m_gameReady)
 	{
@@ -187,7 +188,7 @@ void SceneGame::UpdatePlayerInput()
 }
 
 // 毎フレーム処理
-void SceneGame::UpdateGameplay(float dt)
+void SceneGame::UpdateGameplay(float deltaTime)
 {
 	if (!m_gameReady || m_result)
 	{
@@ -199,19 +200,18 @@ void SceneGame::UpdateGameplay(float dt)
 	UpdatePlayerInput();
 	if (m_turn.IsResolving())
 	{
-		UpdatePhysics(dt);
+		UpdatePhysics(deltaTime);
 		// 全停止時だけFinishTurnが1回動く
 		if (m_turn.EndIfStopped(AnyMoving()))
 		{
 			FinishTurn();
 		}
-
-		UpdateHUD();
 	}
+	UpdateHUD();
 }
 
 // 物理更新
-void SceneGame::UpdatePhysics(float dt)
+void SceneGame::UpdatePhysics(float deltaTime)
 {
 	// 入力はここに入れない。移動と衝突を毎フレーム4回に分ける
 	for (int i = 0; i < 4; ++i)
@@ -220,13 +220,13 @@ void SceneGame::UpdatePhysics(float dt)
 		{
 			if (p && p->IsActive())
 			{// 各物体をdt/4秒ずつ移動する
-				p->Update(dt / 4);
+				p->Update(deltaTime / 4);
 			}
-			// 衝突を調べる。通知はすぐ消費する。入力は4回呼ばない
-			vector<CollisionNotice> notices;
-			m_collision.Step(m_objects, notices);
-			ApplyCollisionNotices(notices);
 		}
+		// 衝突を調べる。通知はすぐ消費する。入力は4回呼ばない
+		vector<CollisionNotice> notices;
+		m_collision.Step(m_objects, notices);
+		ApplyCollisionNotices(notices);
 	}
 }
 
@@ -242,7 +242,11 @@ void SceneGame::ApplyCollisionNotices(const vector<CollisionNotice>& notices)
 		auto* pHP = Enabled<HealthComponent>(*pTarget);
 		if (!pHP) continue;
 
-		int damage = DamageFormula::Calculate(kBaseDamage, kMultiplier, notice.reflectionCount);
+		int damage = DamageFormula::Calculate(
+			kBaseDamage, 
+			kReflectionMultiplier,
+			notice.reflectionCount);
+
 		pHP->ApplyDamage(damage);
 		if (pHP->IsDead())
 		{
@@ -362,10 +366,9 @@ bool SceneGame::SpawnEnemy()
 					return true;
 				}
 			}
-
-			return false;
 		}
 	}
+	return false;
 }
 
 // HUDに渡す数値を集める
@@ -373,8 +376,12 @@ void SceneGame::UpdateHUD()
 {
 	HudInput data;
 
+	// 残りの発射回数
 	data.remainingShots = m_turn.GetRemainingShots();
-	int untilWave = kWaveInterval - m_completedShots % kWaveInterval;
+	// あと何手で敵が追加されるか
+	int shotsUntilNextWave = kWaveInterval - (m_completedShots % kWaveInterval);
+	data.shotsUntilNextWave = shotsUntilNextWave;
+	// 残りの手数
 	int shots = m_turn.GetRemainingShots();
 	if (m_turn.IsResolving()) ++shots;
 
@@ -417,8 +424,8 @@ void SceneGame::UpdateHUD()
 		m_hud = HudPresenter::Build(data, maxDrag);
 		for (size_t i = 0; i < enemies.size(); ++i)
 		{
-			auto c = m_hud.enemyColors[i];
-			enemies[i]->SetColor(XMFLOAT4(c.r, c.g, c.b, c.a));
+			HudColor color = m_hud.enemyColors[i];
+			enemies[i]->SetColor(XMFLOAT4(color.r, color.g, color.b, color.a));
 		}
 	}
 }
@@ -442,14 +449,14 @@ void SceneGame::DrawGameplayHUD()
 			Geometory::SetWorld(identity);
 			XMFLOAT4 color(0.2f, 0.8f, 1.0f, 1.0f);
 			float head = length * 0.4f;
-			if (head > 0.35f) head = 0.35f;
+			if (head > 0.7f) head = 0.7f;
 			float ux = x / length;
 			float uz = z / length;
 			XMFLOAT3 tip(end.x, m_arrowY, end.z);
 			XMFLOAT3 left(end.x - head * ux + head * 0.5f * uz,
 				m_arrowY, end.z - head * uz - head * 0.5f * ux);
 			XMFLOAT3 right(end.x - head * ux - head * 0.5f * uz,
-				 m_arrowY, end.z - head * uz + head * 0.5f * ux);
+				m_arrowY, end.z - head * uz + head * 0.5f * ux);
 			Geometory::AddLine(XMFLOAT3(start.x, m_arrowY, start.z), tip, color);
 			Geometory::AddLine(tip, left, color);
 			Geometory::AddLine(tip, right, color);

@@ -13,18 +13,20 @@ ReflectionCounterComponent::ReflectionCounterComponent(GameObject *pOwner)
 
 void ReflectionCounterComponent::Reset()
 {
-	m_count = 0;
+	m_reflectionCount = 0;
 }
 
 void ReflectionCounterComponent::Increment()
 {
-	if(m_count < INT_MAX)
-	++m_count;
+	if (m_reflectionCount < INT_MAX)
+	{
+		++m_reflectionCount;
+	}
 }
 
 int ReflectionCounterComponent::GetCount() const
 {
-	return m_count;
+	return m_reflectionCount;
 }
 
 std::unique_ptr<Component> ReflectionCounterComponent::Clone(GameObject *pNewOwner) const
@@ -37,7 +39,7 @@ std::unique_ptr<Component> ReflectionCounterComponent::Clone(GameObject *pNewOwn
 #ifdef _DEBUG
 void ReflectionCounterComponent::DrawDebugInspector()
 {
-	ImGui::Text("Reflection: %d", m_count);
+	ImGui::Text("îΩî≠åWêî: %d", m_reflectionCount);
 }
 #endif
 

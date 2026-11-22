@@ -11,9 +11,9 @@ using namespace std;
 
 AutoRotateComponent::AutoRotateComponent(
 	GameObject* pOwner,
-	float speedX, float speedY, float speedZ)
+	float rotationSpeedX, float rotationSpeedY, float rotationSpeedZ)
 	: Component(pOwner)
-	, m_rotationSpeed{ speedX, speedY, speedZ }
+	, m_rotationSpeed{ rotationSpeedX, rotationSpeedY, rotationSpeedZ }
 {
 }
 
@@ -53,7 +53,7 @@ unique_ptr<Component> AutoRotateComponent::Clone(
 void AutoRotateComponent::DrawDebugInspector()
 {
 	// 回転速度を直接編集
-	DragFloat3(u8"回転速度", m_rotationSpeed, 0.1f);
+	DragFloat3("回転速度", m_rotationSpeed, 0.1f);
 
 	// 現在の値を表示
 	Text(
@@ -63,6 +63,6 @@ void AutoRotateComponent::DrawDebugInspector()
 		m_rotationSpeed[2]
 	);
 
-	TextDisabled(u8"度 / 秒");
+	TextDisabled("度 / 秒");
 }
 #endif

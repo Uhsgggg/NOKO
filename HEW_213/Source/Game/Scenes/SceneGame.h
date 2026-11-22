@@ -30,9 +30,9 @@ public:
 private:
 	void DrawDebugGrid();
 	void ResetGamePlay();
-	void UpdateGameplay(float dt);
+	void UpdateGameplay(float deltaTime);
 	void UpdatePlayerInput();
-	void UpdatePhysics(float dt);
+	void UpdatePhysics(float deltaTime);
 	void ApplyCollisionNotices(const std::vector<CollisionNotice>& notices);
 	bool AnyMoving() const;
 	void FinishTurn();

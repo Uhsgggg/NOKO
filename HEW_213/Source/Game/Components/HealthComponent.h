@@ -15,7 +15,7 @@ public:
 
 	const char* GetTypeName() const override
 	{
-		return "Health";
+		return "‘Ì—Í";
 	}
 
 	std::unique_ptr<Component> Clone(

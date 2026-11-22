@@ -50,11 +50,11 @@
 #include "imgui.h"
 #include "Engine/Scene/SceneRayPicker.h"
 #include "Game/Editor/SceneEditActions.h"
+using namespace ImGui;
 #endif
 
 using namespace DirectX;
 using namespace std;
-using namespace ImGui;
 
 // namespace はこのcppファイルの中だけで使用する関数をまとめる仕組み
 namespace

@@ -15,7 +15,7 @@ public:
 
 	const char* GetTypeName() const override
 	{
-		return "Ball Motion";
+		return "”­ŽËˆÚ“®";
 	}
 
 	std::unique_ptr<Component> Clone(
@@ -25,8 +25,8 @@ public:
 	void DrawDebugInspector() override;
 #endif
 
-	void Update(float dt) override;
-	void SetVelocity(BoardVec2 v);
+	void Update(float deltaTime) override;
+	void SetVelocity(BoardVec2 velocity);
 	BoardVec2 GetVelocity() const;
 	bool IsMoving() const;
 	void Stop();
