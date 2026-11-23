@@ -20,7 +20,7 @@ namespace
 	bool g_cancelled = false;
 	// kMouseSensitivity … 1カウント当たりのワールド単位
 	//						最大ドラッグ3なら、約300カウント。
-	const float kMouseSensitivity = 0.01f;
+	constexpr float kMouseSensitivity = 0.01f;
 }
 
 bool BoardPointer::RegisterMouse(HWND hWnd)
@@ -140,7 +140,7 @@ PointerFrame BoardPointer::BuildFrame(Camera& camera)
 
 	// ここはドラッグ開始前だけ。UIや画面外からは開始しない
 #ifdef _DEBUG
-	if (DebugEditor::WantsMouse)
+	if (DebugEditor::WantsMouse())
 	{
 		Reset();
 		return frame;

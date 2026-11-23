@@ -17,7 +17,7 @@ public:
 		std::vector<CollisionNotice>& outNotices);
 
 	static bool Detect(
-		GameObject& a, GameObject& b, Contact& out);
+		GameObject& objectA, GameObject& objectB, Contact& outContacts);
 
 	static BoardVec2 Reflect(
 		BoardVec2 velocity, BoardVec2 normal, float restitution);
@@ -25,14 +25,14 @@ public:
 private:
 	struct HitPair
 	{
-		GameObject* a;
-		GameObject* b;
+		GameObject* objectA;
+		GameObject* objectB;
 	};
 
 	std::vector<HitPair> m_previousContacts;
 
 	void SolvePair(
-		GameObject& a, GameObject& b,
-		std::vector<CollisionNotice>& out,
-		std::vector<HitPair>& current);
+		GameObject& objectA, GameObject& objectB,
+		std::vector<CollisionNotice>& outNotices,
+		std::vector<HitPair>& currentContacts);
 };

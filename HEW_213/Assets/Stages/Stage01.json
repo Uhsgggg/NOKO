@@ -30,18 +30,35 @@
         },
         {
             "color": [
-                0.7829181551933289,
-                0.7829181551933289,
-                0.7829181551933289,
+                0.39145904779434204,
+                0.39145904779434204,
+                0.39145904779434204,
                 1.0
             ],
-            "components": [],
+            "components": [
+                {
+                    "enabled": true,
+                    "halfExtent": [
+                        8.0,
+                        0.25
+                    ],
+                    "radius": 0.5,
+                    "restitution": 1.0,
+                    "role": 3,
+                    "shape": 1,
+                    "type": "Collider"
+                },
+                {
+                    "enabled": true,
+                    "type": "ReflectionCounter"
+                }
+            ],
             "name": "Wall+Z_xRot-90",
             "transform": {
                 "position": [
                     0.0,
                     0.5,
-                    5.0
+                    5.25
                 ],
                 "rotation": [
                     -90.0,
@@ -49,8 +66,8 @@
                     0.0
                 ],
                 "scale": [
-                    15.0,
-                    0.009999999776482582,
+                    16.0,
+                    0.5,
                     1.0
                 ]
             },
@@ -58,18 +75,31 @@
         },
         {
             "color": [
-                0.7843137383460999,
-                0.7843137383460999,
-                0.7843137383460999,
+                0.3921568691730499,
+                0.3921568691730499,
+                0.3921568691730499,
                 1.0
             ],
-            "components": [],
+            "components": [
+                {
+                    "enabled": true,
+                    "halfExtent": [
+                        8.0,
+                        0.25
+                    ],
+                    "radius": 0.5,
+                    "restitution": 1.0,
+                    "role": 3,
+                    "shape": 1,
+                    "type": "Collider"
+                }
+            ],
             "name": "Wall-Z_xRot+90",
             "transform": {
                 "position": [
                     0.0,
                     0.5,
-                    -5.0
+                    -5.25
                 ],
                 "rotation": [
                     90.0,
@@ -77,8 +107,8 @@
                     0.0
                 ],
                 "scale": [
-                    15.0,
-                    0.009999999776482582,
+                    16.0,
+                    0.5,
                     1.0
                 ]
             },
@@ -86,16 +116,29 @@
         },
         {
             "color": [
-                0.7843137383460999,
-                0.7843137383460999,
-                0.7843137383460999,
+                0.3921568691730499,
+                0.3921568691730499,
+                0.3921568691730499,
                 1.0
             ],
-            "components": [],
+            "components": [
+                {
+                    "enabled": true,
+                    "halfExtent": [
+                        0.25,
+                        5.0
+                    ],
+                    "radius": 0.5,
+                    "restitution": 1.0,
+                    "role": 3,
+                    "shape": 1,
+                    "type": "Collider"
+                }
+            ],
             "name": "Wall+X_xRot+180_zRot+90",
             "transform": {
                 "position": [
-                    7.5,
+                    7.75,
                     0.5,
                     0.0
                 ],
@@ -106,7 +149,7 @@
                 ],
                 "scale": [
                     1.0,
-                    0.009999999776482582,
+                    0.5,
                     10.0
                 ]
             },
@@ -114,16 +157,29 @@
         },
         {
             "color": [
-                0.7843137383460999,
-                0.7843137383460999,
-                0.7843137383460999,
+                0.3921568691730499,
+                0.3921568691730499,
+                0.3921568691730499,
                 1.0
             ],
-            "components": [],
+            "components": [
+                {
+                    "enabled": true,
+                    "halfExtent": [
+                        0.25,
+                        5.0
+                    ],
+                    "radius": 0.5,
+                    "restitution": 1.0,
+                    "role": 3,
+                    "shape": 1,
+                    "type": "Collider"
+                }
+            ],
             "name": "Wall-X_xRot+180_zRot-90",
             "transform": {
                 "position": [
-                    -7.5,
+                    -7.75,
                     0.5,
                     0.0
                 ],
@@ -134,7 +190,7 @@
                 ],
                 "scale": [
                     1.0,
-                    0.009999999776482582,
+                    0.5,
                     10.0
                 ]
             },
@@ -147,14 +203,43 @@
                 0.0,
                 1.0
             ],
-            "components": [],
+            "components": [
+                {
+                    "enabled": true,
+                    "halfExtent": [
+                        0.5,
+                        0.5
+                    ],
+                    "radius": 0.5,
+                    "restitution": 1.0,
+                    "role": 1,
+                    "shape": 0,
+                    "type": "Collider"
+                },
+                {
+                    "deceleration": 15.0,
+                    "enabled": true,
+                    "maxSpeed": 100.0,
+                    "stopSpeed": 0.05000000074505806,
+                    "type": "BallMotion"
+                },
+                {
+                    "enabled": true,
+                    "type": "ReflectionCounter"
+                },
+                {
+                    "enabled": true,
+                    "maxHP": 500,
+                    "type": "Health"
+                }
+            ],
             "name": "Enemy1",
             "shape": "Sphere",
             "transform": {
                 "position": [
-                    2.0,
-                    0.550000011920929,
-                    2.0
+                    5.800000190734863,
+                    0.5,
+                    0.8999999761581421
                 ],
                 "rotation": [
                     0.0,
@@ -176,7 +261,36 @@
                 0.0,
                 1.0
             ],
-            "components": [],
+            "components": [
+                {
+                    "enabled": true,
+                    "halfExtent": [
+                        0.5,
+                        0.5
+                    ],
+                    "radius": 0.5,
+                    "restitution": 1.0,
+                    "role": 1,
+                    "shape": 0,
+                    "type": "Collider"
+                },
+                {
+                    "deceleration": 15.0,
+                    "enabled": true,
+                    "maxSpeed": 100.0,
+                    "stopSpeed": 0.05000000074505806,
+                    "type": "BallMotion"
+                },
+                {
+                    "enabled": true,
+                    "maxHP": 500,
+                    "type": "Health"
+                },
+                {
+                    "enabled": true,
+                    "type": "ReflectionCounter"
+                }
+            ],
             "name": "Enemy2",
             "shape": "Sphere",
             "transform": {
@@ -200,12 +314,25 @@
         },
         {
             "color": [
-                0.43772244453430176,
-                0.43772244453430176,
-                0.43772244453430176,
+                0.3921568691730499,
+                0.3921568691730499,
+                0.3921568691730499,
                 1.0
             ],
-            "components": [],
+            "components": [
+                {
+                    "enabled": true,
+                    "halfExtent": [
+                        0.5,
+                        0.5
+                    ],
+                    "radius": 0.5,
+                    "restitution": 1.0,
+                    "role": 3,
+                    "shape": 1,
+                    "type": "Collider"
+                }
+            ],
             "name": "Box",
             "shape": "Box",
             "transform": {
@@ -229,41 +356,25 @@
         },
         {
             "color": [
-                0.43772244453430176,
-                0.43772244453430176,
-                0.43772244453430176,
+                0.3921568691730499,
+                0.3921568691730499,
+                0.3921568691730499,
                 1.0
             ],
-            "components": [],
-            "name": "Box_Copy",
-            "shape": "Box",
-            "transform": {
-                "position": [
-                    0.44999998807907104,
-                    0.5,
-                    -0.949999988079071
-                ],
-                "rotation": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "scale": [
-                    1.0,
-                    1.0,
-                    1.0
-                ]
-            },
-            "type": "Primitive"
-        },
-        {
-            "color": [
-                0.43772244453430176,
-                0.43772244453430176,
-                0.43772244453430176,
-                1.0
+            "components": [
+                {
+                    "enabled": true,
+                    "halfExtent": [
+                        0.5,
+                        0.5
+                    ],
+                    "radius": 0.5,
+                    "restitution": 1.0,
+                    "role": 3,
+                    "shape": 1,
+                    "type": "Collider"
+                }
             ],
-            "components": [],
             "name": "Box_Copy_Copy",
             "shape": "Box",
             "transform": {
@@ -292,9 +403,27 @@
                 1.0,
                 1.0
             ],
-            "components": [],
+            "components": [
+                {
+                    "enabled": true,
+                    "halfExtent": [
+                        0.5,
+                        0.5
+                    ],
+                    "radius": 1.5,
+                    "restitution": 1.0,
+                    "role": 2,
+                    "shape": 0,
+                    "type": "Collider"
+                },
+                {
+                    "enabled": true,
+                    "maxHP": 1000,
+                    "type": "Health"
+                }
+            ],
             "modelPath": "Assets/Model/KingSlime.fbx",
-            "name": "KingSlime",
+            "name": "Boss",
             "transform": {
                 "position": [
                     5.5,
@@ -321,9 +450,44 @@
                 1.0,
                 1.0
             ],
-            "components": [],
+            "components": [
+                {
+                    "enabled": true,
+                    "halfExtent": [
+                        0.5,
+                        0.5
+                    ],
+                    "radius": 0.5,
+                    "restitution": 1.0,
+                    "role": 0,
+                    "shape": 0,
+                    "type": "Collider"
+                },
+                {
+                    "enabled": true,
+                    "type": "PlayerInput"
+                },
+                {
+                    "enabled": true,
+                    "maxDrag": 7.0,
+                    "maxSpeed": 200.0,
+                    "minDrag": 1.0,
+                    "type": "PlayerLaunch"
+                },
+                {
+                    "deceleration": 15.0,
+                    "enabled": true,
+                    "maxSpeed": 100.0,
+                    "stopSpeed": 0.05000000074505806,
+                    "type": "BallMotion"
+                },
+                {
+                    "enabled": true,
+                    "type": "ReflectionCounter"
+                }
+            ],
             "modelPath": "Assets/Model/MainCharacter_01.fbx",
-            "name": "MainCharacter_01",
+            "name": "Player",
             "transform": {
                 "position": [
                     -5.0,
@@ -342,18 +506,192 @@
                 ]
             },
             "type": "Fbx"
+        },
+        {
+            "color": [
+                0.0,
+                1.0,
+                0.0,
+                1.0
+            ],
+            "components": [
+                {
+                    "enabled": true,
+                    "halfExtent": [
+                        0.5,
+                        0.5
+                    ],
+                    "radius": 0.5,
+                    "restitution": 1.0,
+                    "role": 1,
+                    "shape": 0,
+                    "type": "Collider"
+                },
+                {
+                    "deceleration": 15.0,
+                    "enabled": true,
+                    "maxSpeed": 100.0,
+                    "stopSpeed": 0.05000000074505806,
+                    "type": "BallMotion"
+                },
+                {
+                    "enabled": true,
+                    "type": "ReflectionCounter"
+                },
+                {
+                    "enabled": true,
+                    "maxHP": 500,
+                    "type": "Health"
+                }
+            ],
+            "name": "Enemy3",
+            "shape": "Sphere",
+            "transform": {
+                "position": [
+                    3.0,
+                    0.550000011920929,
+                    2.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "type": "Primitive"
+        },
+        {
+            "color": [
+                0.0,
+                1.0,
+                0.0,
+                1.0
+            ],
+            "components": [
+                {
+                    "enabled": true,
+                    "halfExtent": [
+                        0.5,
+                        0.5
+                    ],
+                    "radius": 0.5,
+                    "restitution": 1.0,
+                    "role": 1,
+                    "shape": 0,
+                    "type": "Collider"
+                },
+                {
+                    "deceleration": 15.0,
+                    "enabled": true,
+                    "maxSpeed": 100.0,
+                    "stopSpeed": 0.05000000074505806,
+                    "type": "BallMotion"
+                },
+                {
+                    "enabled": true,
+                    "type": "ReflectionCounter"
+                },
+                {
+                    "enabled": true,
+                    "maxHP": 500,
+                    "type": "Health"
+                }
+            ],
+            "name": "Enemy4",
+            "shape": "Sphere",
+            "transform": {
+                "position": [
+                    2.450000047683716,
+                    0.550000011920929,
+                    -1.649999976158142
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "type": "Primitive"
+        },
+        {
+            "color": [
+                0.0,
+                1.0,
+                0.0,
+                1.0
+            ],
+            "components": [
+                {
+                    "enabled": true,
+                    "halfExtent": [
+                        0.5,
+                        0.5
+                    ],
+                    "radius": 0.5,
+                    "restitution": 1.0,
+                    "role": 1,
+                    "shape": 0,
+                    "type": "Collider"
+                },
+                {
+                    "deceleration": 15.0,
+                    "enabled": true,
+                    "maxSpeed": 100.0,
+                    "stopSpeed": 0.05000000074505806,
+                    "type": "BallMotion"
+                },
+                {
+                    "enabled": true,
+                    "type": "ReflectionCounter"
+                },
+                {
+                    "enabled": true,
+                    "maxHP": 500,
+                    "type": "Health"
+                }
+            ],
+            "name": "Enemy5",
+            "shape": "Sphere",
+            "transform": {
+                "position": [
+                    -3.5,
+                    0.550000011920929,
+                    -1.5
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "type": "Primitive"
         }
     ],
     "playCamera": {
         "look": [
             0.0,
-            0.0,
-            -0.30000001192092896
+            9.452884674072266,
+            -3.6822350025177
         ],
         "position": [
             0.0,
-            10.0,
-            -2.0
+            10.368375778198242,
+            -4.084570407867432
         ]
     },
     "version": 1

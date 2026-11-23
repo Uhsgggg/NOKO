@@ -7,7 +7,8 @@ class AutoRotateComponent : public Component
 {
 public:
 	AutoRotateComponent(
-		GameObject* pOwner, float speedX, float speedY, float speedZ);
+		GameObject* pOwner,
+		float rotationSpeedX, float rotationSpeedY, float rotationSpeedZ);
 
 	~AutoRotateComponent() override = default;
 
@@ -23,7 +24,7 @@ public:
 	// Inspectorの表示用
 	const char* GetTypeName() const override
 	{
-		return "Auto Rotate";
+		return "自動回転";
 	}
 
 	// 自動回転コンポーネントを複製

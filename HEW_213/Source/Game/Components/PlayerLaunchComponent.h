@@ -15,7 +15,7 @@ public:
 
 	const char* GetTypeName() const override
 	{
-		return "Player Launch";
+		return "ƒvƒŒƒCƒ„[”­Ë";
 	}
 
 	std::unique_ptr<Component> Clone(

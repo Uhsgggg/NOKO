@@ -5,15 +5,19 @@
 #include "imgui.h"
 #endif
 
+using namespace std;
+
 PlayerLaunchComponent::PlayerLaunchComponent(GameObject* pOwner) : Component(pOwner)
 {
 }
 
 void PlayerLaunchComponent::Configure(float minDrag, float maxDrag, float maxSpeed)
 {
-	if (!std::isfinite(minDrag) ||
-		!std::isfinite(maxDrag) ||
-		!std::isfinite(maxSpeed)) return;
+	if (!isfinite(minDrag) ||
+		!isfinite(maxDrag) ||
+		!isfinite(maxSpeed))
+		return;
+
 	m_minDrag  = minDrag;
 	m_maxDrag  = maxDrag;
 	m_maxSpeed = maxSpeed;
@@ -28,14 +32,21 @@ bool PlayerLaunchComponent::TryBuildVelocity(const AimState& aim, BoardVec2& out
 
 	float x = aim.anchor.x - aim.point.x;
 	float z = aim.anchor.z - aim.point.z;
-	float length = std::sqrt(x * x + z * z);
-	if (!std::isfinite(length) ||
+	float length = sqrt(x * x + z * z);
+	if (!isfinite(length) ||
 		length <= 0 ||
-		length < m_minDrag) return false;
+		length < m_minDrag)
+		return false;
 
-	float speed = length / m_maxDrag * m_maxSpeed;
+	// ドラッグ距離に関係なく、一定の初速で発射
+	float speed = m_maxSpeed;
+	//float speed = length / m_maxDrag * m_maxSpeed;
+
 	if (speed > m_maxSpeed)
+	{
 		speed = m_maxSpeed;
+	}
+
 	out.x = x / length * speed;
 	out.z = z / length * speed;
 
@@ -59,7 +70,7 @@ float PlayerLaunchComponent::GetMaxSpeed() const
 
 std::unique_ptr<Component> PlayerLaunchComponent::Clone(GameObject* pNewOwner) const
 {
-	auto pCopy = std::make_unique<PlayerLaunchComponent>(pNewOwner);
+	auto pCopy = make_unique<PlayerLaunchComponent>(pNewOwner);
 	pCopy->Configure(m_minDrag, m_maxDrag, m_maxSpeed);
 	pCopy->SetEnabled(IsEnabled());
 	return pCopy;
@@ -68,12 +79,12 @@ std::unique_ptr<Component> PlayerLaunchComponent::Clone(GameObject* pNewOwner) c
 #ifdef _DEBUG
 void PlayerLaunchComponent::DrawDebugInspector()
 {
-	float a = m_minDrag;
-	float b = m_maxDrag;
-	float c = m_maxSpeed;
-	ImGui::DragFloat("Min drag",     &a, 0.05f, 0,     10);
-	ImGui::DragFloat("Max drag",     &b, 0.1f,  0.01f, 20);
-	ImGui::DragFloat("Launch speed", &c, 0.1f, 0.01f, 100);
-	Configure(a, b, c);
+	float minD = m_minDrag;
+	float maxD = m_maxDrag;
+	float maxS = m_maxSpeed;
+	ImGui::DragFloat("最小ドラッグ距離",&minD, 0.05f, 0,     10);
+	ImGui::DragFloat("最大ドラッグ距離",&maxD, 0.1f,  0.01f, 20);
+	ImGui::DragFloat("最大発射速度", &maxS, 0.1f, 0.01f, 100);
+	Configure(minD, maxD, maxS);
 }
 #endif

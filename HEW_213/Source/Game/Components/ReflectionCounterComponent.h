@@ -5,20 +5,20 @@
 
 class ReflectionCounterComponent : public Component {
 public:
-    explicit ReflectionCounterComponent(GameObject* owner);
+    explicit ReflectionCounterComponent(GameObject *pOwner);
 
-    const char* GetTypeId() const override
+    const char *GetTypeId() const override
     { 
         return "ReflectionCounter";
     }
 
-    const char* GetTypeName() const override
+    const char *GetTypeName() const override
     { 
-        return "ReflectionCounter";
+        return "反射回数カウンター";
     }
 
     std::unique_ptr<Component> Clone(
-        GameObject* pNewOwner) const override;
+        GameObject *pNewOwner) const override;
 
 #ifdef _DEBUG
     void DrawDebugInspector() override;
@@ -29,5 +29,6 @@ public:
     int GetCount() const;
 
 private:
-    int m_count = 0;
+    // 実際に何回反射したか
+    int m_reflectionCount = 0;
 };

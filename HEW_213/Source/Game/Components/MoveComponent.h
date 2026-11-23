@@ -5,7 +5,7 @@
 class MoveComponent : public Component
 {
 public:
-	MoveComponent(GameObject* pOwner,float x, float y, float z);
+	MoveComponent(GameObject* pOwner,float velocityX, float velocityY, float velocityZ);
 	~MoveComponent() override = default;
 
 	// 毎フレームの移動処理
@@ -20,14 +20,14 @@ public:
 	// Inspectorの表示名
 	const char* GetTypeName() const override
 	{
-		return "Move";
+		return "自動移動";
 	}
 
 	// コンポーネント複製
 	std::unique_ptr<Component> Clone(GameObject* pNewOwner) const override;
 
 	// 移動速度を設定
-	void SetVelocity(float x, float y, float z);
+	void SetVelocity(float velocityX, float velocityY, float velocityZ);
 
 	// 移動速度を取得
 	const float* GetVelocity() const

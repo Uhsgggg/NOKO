@@ -6,26 +6,27 @@
 class ColliderComponent : public Component
 {
 public:
-	explicit ColliderComponent(GameObject* owner);
+	explicit ColliderComponent(GameObject *pOwner);
 
-	const char* GetTypeId() const override
+	const char *GetTypeId() const override
 	{
 		return "Collider";
 	}
 
-	const char* GetTypeName() const override
+	const char *GetTypeName() const override
 	{
-		return "Collider";
+		return "当たり判定";
 	}
 
 	std::unique_ptr<Component> Clone(
-		GameObject* pNewOwner) const override;
+		GameObject *pNewOwner) const override;
 
 #ifdef _DEBUG
 	void DrawDebugInspector() override;
-	// 当たり判定可視化用
-	// ※実装はリードがやる予定なので、無視してください。
 	void DrawDebug() const; 
+	void NotifyDebugHit();
+	void UpdateDebugHit();
+	bool IsDebugHit()const;
 #endif
 
 	void Configure(const ColliderConfig& config);
@@ -33,4 +34,7 @@ public:
 
 private:
 	ColliderConfig m_config;
+#ifdef _DEBUG
+	int m_nDebugHitFrames = 0;
+#endif
 };

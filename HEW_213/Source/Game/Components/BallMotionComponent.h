@@ -15,7 +15,7 @@ public:
 
 	const char* GetTypeName() const override
 	{
-		return "Ball Motion";
+		return "î≠éÀà⁄ìÆ";
 	}
 
 	std::unique_ptr<Component> Clone(
@@ -25,8 +25,8 @@ public:
 	void DrawDebugInspector() override;
 #endif
 
-	void Update(float dt) override;
-	void SetVelocity(BoardVec2 v);
+	void Update(float deltaTime) override;
+	void SetVelocity(BoardVec2 velocity);
 	BoardVec2 GetVelocity() const;
 	bool IsMoving() const;
 	void Stop();
@@ -36,7 +36,9 @@ public:
 	float GetMaxSpeed() const;
 
 private:
+	// åªç›ÇÃë¨ìx
 	BoardVec2 m_velocity;
+
 	float m_deceleration = 4.0f;
 	float m_stopSpeed = 0.05f;
 	float m_maxSpeed = 10.0f;

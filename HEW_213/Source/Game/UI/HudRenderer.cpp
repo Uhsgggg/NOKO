@@ -79,7 +79,7 @@ void HudRenderer::Draw(
 	if (hasBoss)
 	{
 		float x = (w - 448 * s) / 2.0f;
-		float y = 24 * s;
+		float y = 12 * s;
 		DrawRegion(&m_atlas, x, y, 448 * s, 96 * s,
 			0, 224, 448, 96);
 
@@ -97,13 +97,13 @@ void HudRenderer::Draw(
 	float right = w - 248 * s;
 	DrawRegion(&m_atlas, right, 24 * s, 224 * s, 112 * s,
 		256, 96, 224, 112);
-	DrawNumber(view.nextEnemiesText, right + 20 * s, 76 * s, s);
+	DrawNumber(view.shotsUntilNextWaveText, right + 20 * s, 68 * s, 1.5 * s);
 
 	// 残り手数：右下
 	float bottom = h - 136 * s;
 	DrawRegion(&m_atlas, right, bottom, 224 * s, 112 * s,
 		0, 96, 224, 112);
-	DrawNumber(view.shotsText, right + 20 * s, bottom + 52 * s, s);
+	DrawNumber(view.shotsText, right + 20 * s, bottom + 45 * s, 1.5 * s);
 
 	// リトライ：左下
 	DrawRegion(&m_atlas, 24 * s, h - 72 * s, 192 * s, 48 * s,

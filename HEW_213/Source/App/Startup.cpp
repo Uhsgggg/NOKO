@@ -307,6 +307,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 	}
 
+	if (message == WM_INPUT)
+	{
+		BoardPointer::ReceiveRawInput(lParam);
+		return DefWindowProc(hWnd, message, wParam, lParam);
+	}
+
 #ifdef _DEBUG
 	if (DebugEditor::HandleWndProc(
 		hWnd, message, wParam, lParam))
@@ -317,6 +323,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message)
 	{
+	case WM_INPUT:
+		BoardPointer::ReceiveRawInput(lParam);
+		return 0;
+
 	case WM_GETMINMAXINFO:
 	{
 		MINMAXINFO* pInfo =

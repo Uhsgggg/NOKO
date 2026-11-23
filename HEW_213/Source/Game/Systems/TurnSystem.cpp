@@ -1,41 +1,41 @@
 #include "TurnSystem.h"
 
-void TurnSystem::Reset(int shots)
+void TurnSystem::Reset(int initialShots)
 {
-	if (shots < 0)
+	if (initialShots < 0)
 	{
-		shots = 0;
-		m_remaining = shots;
-		m_resolving = false;
+		initialShots = 0;
 	}
+	m_remainingShots = initialShots;
+	m_resolvingShots = false;
 }
 
 bool TurnSystem::CanLaunch() const
 {
-	return m_remaining > 0 && !m_resolving;
+	return m_remainingShots > 0 && !m_resolvingShots;
 }
 
 bool TurnSystem::TryConsumeShot()
 {
 	if (!CanLaunch()) return false;
-	--m_remaining;
-	m_resolving = true;
+	--m_remainingShots;
+	m_resolvingShots = true;
 	return true;
 }
 
-bool TurnSystem::EndIfStopped(bool anyMoving)
+bool TurnSystem::EndIfStopped(bool areAnyBallsMoving)
 {
-	if (!m_resolving || anyMoving) return false;
-	m_resolving = false;
+	if (!m_resolvingShots || areAnyBallsMoving) return false;
+	m_resolvingShots = false;
 	return true;
 }
 
 int TurnSystem::GetRemainingShots() const
 {
-	return m_remaining;
+	return m_remainingShots;
 }
 
 bool TurnSystem::IsResolving() const
 {
-	return m_resolving;
+	return m_resolvingShots;
 }

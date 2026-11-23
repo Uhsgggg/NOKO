@@ -15,7 +15,7 @@ public:
 
 	const char* GetTypeName() const override
 	{
-		return "Player Input";
+		return "プレイヤー入力";
 	}
 
 	std::unique_ptr<Component> Clone(
@@ -25,8 +25,11 @@ public:
 	void DrawDebugInspector() override;
 #endif
 
-	void Sample(const PointerFrame& frame, bool canAim);
+	// マウスの状態を記録する
+	void Sample(const PointerFrame& pointerFrame, bool canAim);
+	// 現在のドラッグ情報を取得する
 	AimState GetAim()const;
+	// ドラッグ状態をリセットする
 	void Cancel();
 
 private:
