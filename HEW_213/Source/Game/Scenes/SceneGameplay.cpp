@@ -682,8 +682,8 @@ void SceneGame::DrawMotionMonitor()
 				Separator();
 			}
 		}
-
-		End();
 	}
+
+	End();
 }
 #endif
