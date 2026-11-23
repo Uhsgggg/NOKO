@@ -29,5 +29,8 @@ public:
     int GetCount() const;
 
 private:
+    // ÀÛ‚É‰½‰ñ”½Ë‚µ‚½‚©
     int m_reflectionCount = 0;
+    // UŒ‚—Í‚ğ‰ÁZ‚·‚é‚½‚ß‚Ì‹­‰»’l
+    int m_attackLevel = 0;
 };
