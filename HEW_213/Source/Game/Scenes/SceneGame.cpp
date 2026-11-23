@@ -202,7 +202,7 @@ void SceneGame::Update()
 
 	if (!m_isEditMode && IsKeyTrigger(VK_F2))
 	{
-		m_showDamageMonitor = !m_showDamageMonitor;
+		m_showDebugMonitor = !m_showDebugMonitor;
 	}
 
 	// Edit ModeíÜÇÕÉQÅ[ÉÄÇçXêVÇµÇ»Ç¢
@@ -221,6 +221,7 @@ void SceneGame::Update()
 			ExitPlayMode();
 			EnterPlayMode();
 			m_damageDebugStats.clear();
+			//m_motionDebugStats.clear();
 #else
 			if (LoadGameplayStage())
 			{
@@ -328,6 +329,7 @@ void SceneGame::Draw()
 	{
 		DrawGameplayHUD();
 		DrawDamageMonitor();
+		DrawMotionMonitor();
 	}
 #else
 	DrawGameplayHUD();

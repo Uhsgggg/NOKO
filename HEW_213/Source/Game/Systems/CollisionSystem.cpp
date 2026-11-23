@@ -70,7 +70,6 @@ static float Dot(BoardVec2 objectA, BoardVec2 objectB)
 static bool SphereSphere(BoardVec2 objectA, float radiusA,
 						 BoardVec2 objectB, float radiusB,
 						 Contact& outContacts)
-	
 {
 	float dx = objectA.x - objectB.x;
 	float dz = objectA.z - objectB.z;
@@ -83,7 +82,10 @@ static bool SphereSphere(BoardVec2 objectA, float radiusA,
 	outContacts.normal = { 1, 0 };  // íÜêSÇ™äÆëSÇ…ìØÇ∂Ç»ÇÁXï˚å¸Ç…ì¶Ç™Ç∑
 	if (distance > 0)
 	{
-		outContacts.normal = { dx / distance, dz / distance };
+		outContacts.normal = 
+		{
+			dx / distance, dz / distance
+		};
 	}
 
 	outContacts.penetration = radiusA + radiusB - distance;
@@ -152,9 +154,7 @@ bool CollisionSystem::Detect(GameObject& objectA,
 
 	if (&objectA == &objectB ||
 		!objectA.IsActive() || !objectB.IsActive())
-	{
 		return false;
-	}
 
 	// objectA/BÇÃìñÇΩÇËîªíË
 	auto* pColliderA = objectA.GetComponent<ColliderComponent>();
@@ -162,9 +162,7 @@ bool CollisionSystem::Detect(GameObject& objectA,
 
 	if (!pColliderA || !pColliderB ||
 		!pColliderA->IsEnabled() || !pColliderB->IsEnabled())
-	{
 		return false;
-	}
 
 	// objectA/BÇÃìñÇΩÇËîªíËê›íË
 	const ColliderConfig& configA = pColliderA->GetConfig();
@@ -172,11 +170,10 @@ bool CollisionSystem::Detect(GameObject& objectA,
 
 	BoardVec2 positionA = Position(objectA);
 	BoardVec2 positionB = Position(objectB);
+
 	if (!isfinite(positionA.x) || !isfinite(positionA.z) ||
 		!isfinite(positionB.x) || !isfinite(positionB.z))
-	{
 		return false;
-	}
 
 	// è’ìÀÇµÇƒÇ¢ÇÈÇ©
 	bool isColliding = false;
@@ -184,17 +181,23 @@ bool CollisionSystem::Detect(GameObject& objectA,
 	if (configA.shape == ColliderShape::Sphere &&
 		configB.shape == ColliderShape::Sphere)
 	{
-		isColliding = SphereSphere(positionA, configA.radius, positionB, configB.radius, outContact);
+		isColliding = SphereSphere(
+			positionA, configA.radius,
+			positionB, configB.radius, outContact);
 	}
 	else if (configA.shape == ColliderShape::Sphere &&
 		configB.shape == ColliderShape::Box)
 	{
-		isColliding = SphereBox(positionA, configA.radius, positionB, configB.halfExtent, outContact);
+		isColliding = SphereBox(
+			positionA, configA.radius,
+			positionB, configB.halfExtent, outContact);
 	}
 	else if (configA.shape == ColliderShape::Box &&
-		configB.shape == ColliderShape::Sphere)
+			 configB.shape == ColliderShape::Sphere)
 	{
-		isColliding = SphereBox(positionB, configB.radius, positionA, configA.halfExtent, outContact);
+		isColliding = SphereBox(
+			positionB, configB.radius,
+			positionA, configA.halfExtent, outContact);
 		outContact.normal.x = -outContact.normal.x;
 		outContact.normal.z = -outContact.normal.z;
 	}
@@ -243,8 +246,8 @@ static BallMotionComponent* GetMotion(GameObject& object)
 	}
 
 	// ãÖà»äOÇÕìÆÇ©Ç»Ç¢
-	if (object.GetComponent<ColliderComponent>()
-		->GetConfig().shape != ColliderShape::Sphere)
+	if (object.GetComponent<ColliderComponent>()->
+		GetConfig().shape != ColliderShape::Sphere)
 	{
 		return nullptr;
 	}

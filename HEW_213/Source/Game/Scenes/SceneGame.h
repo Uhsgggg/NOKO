@@ -83,6 +83,7 @@ private: // Debug
 	void DrawColliderDebug();
 	void DrawColliderDebugPanel();
 	void DrawDamageMonitor();
+	void DrawMotionMonitor();
 	// Play Modeを開始する
 	void EnterPlayMode();
 	void DrawEditor();
@@ -116,9 +117,10 @@ private: // Debug
 
 	// キャラクターごとに記録する
 	std::unordered_map<const GameObject*, DamageDebugStats> m_damageDebugStats;
+	//std::unordered_map<const GameObject*, BallMotionComponent> m_motionDebugStats;
 
 	// 戦闘デバッグモニターを表示するかしないか
-	bool m_showDamageMonitor = true;
+	bool m_showDebugMonitor = true;
 
 #endif
 };

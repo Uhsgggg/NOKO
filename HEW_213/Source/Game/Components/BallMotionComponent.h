@@ -36,7 +36,9 @@ public:
 	float GetMaxSpeed() const;
 
 private:
+	// åªç›ÇÃë¨ìx
 	BoardVec2 m_velocity;
+
 	float m_deceleration = 4.0f;
 	float m_stopSpeed = 0.05f;
 	float m_maxSpeed = 10.0f;

@@ -9,11 +9,13 @@ using namespace ImGui;
 using namespace std;
 
 //速度はXZ平面のみ。Clone時には設定のみコピーする
-BallMotionComponent::BallMotionComponent(GameObject* pOwner) : Component(pOwner)
+BallMotionComponent::BallMotionComponent(GameObject* pOwner) 
+	: Component(pOwner)
 {
 }
 
-void BallMotionComponent::Configure(float deceleration, float stopSpeed, float maxSpeed)
+void BallMotionComponent::Configure(
+	float deceleration, float stopSpeed, float maxSpeed)
 {
 	//設定が間違っていたら今の設定を残す
 	if (!isfinite(deceleration) ||
@@ -34,7 +36,9 @@ void BallMotionComponent::Configure(float deceleration, float stopSpeed, float m
 
 void BallMotionComponent::SetVelocity(BoardVec2 velocity)
 {
-	float speed = sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+	float speed = 
+		sqrt(velocity.x * velocity.x +
+			 velocity.z * velocity.z);
 	if (!isfinite(speed)) return;
 	if (speed <= m_stopSpeed)
 	{
@@ -83,21 +87,26 @@ float BallMotionComponent::GetMaxSpeed() const
 void BallMotionComponent::Update(float deltaTime)
 {
 	if (!m_pOwner || !IsMoving() ||
-		!isfinite(deltaTime) ||
-		deltaTime <= 0) return;
+		!isfinite(deltaTime) || deltaTime <= 0) 
+		return;
 
+	// ボールを動かす処理
+	// 新しい位置＝現在の位置＋速度×経過時間
 	Transform& t = m_pOwner->GetTransform();
 	t.position[0] += m_velocity.x * deltaTime;
 	t.position[2] += m_velocity.z * deltaTime;
 
 	float Speed = sqrt(
-		m_velocity.x * m_velocity.x + m_velocity.z * m_velocity.z);
+		m_velocity.x * m_velocity.x +
+		m_velocity.z * m_velocity.z);
+
 	float nextSpeed = Speed - m_deceleration * deltaTime;
 	if (nextSpeed <= m_stopSpeed)
 	{
 		Stop();
 		return;
 	}
+
 	// 向きを変えずに速さだけ減らす
 	m_velocity.x = m_velocity.x / Speed * nextSpeed;
 	m_velocity.z = m_velocity.z / Speed * nextSpeed;

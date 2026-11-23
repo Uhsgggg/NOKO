@@ -35,7 +35,6 @@ void ColliderComponent::Configure(const ColliderConfig& config)
 		return;
 
 	m_config = config;
-	
 }
 
 const ColliderConfig& ColliderComponent::GetConfig() const

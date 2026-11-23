@@ -274,7 +274,6 @@ void SceneGame::ApplyCollisionNotices(const vector<CollisionNotice>& notices)
 		++stats.hitCount;
 #endif
 
-		pHP->ApplyDamage(calculatedDamage);
 		if (pHP->IsDead())
 		{
 			auto* pMotion = Enabled<BallMotionComponent>(*pTarget);
@@ -496,7 +495,7 @@ void SceneGame::DrawGameplayHUD()
 #ifdef _DEBUG
 void SceneGame::DrawDamageMonitor()
 {
-	if (!m_showDamageMonitor) return;
+	if (!m_showDebugMonitor) return;
 
 	// ウィンドウ設定
 	const ImGuiWindowFlags windowFlags =
@@ -522,7 +521,6 @@ void SceneGame::DrawDamageMonitor()
 			auto* pCollider = Enabled<ColliderComponent>(*pObject);
 
 			if (!pCollider) continue;
-
 
 			const GameRole role = pCollider->GetConfig().role;
 			// ボスのHP表示
@@ -625,5 +623,67 @@ void SceneGame::DrawDamageMonitor()
 	}
 
 	End();
+}
+
+void SceneGame::DrawMotionMonitor()
+{
+	if (!m_showDebugMonitor) return;
+
+	// ウィンドウ設定
+	const ImGuiWindowFlags windowFlags =
+		ImGuiWindowFlags_AlwaysAutoResize |
+		ImGuiWindowFlags_NoSavedSettings;
+	SetNextWindowPos(ImVec2(220.0f, 0.0f), ImGuiCond_Always);
+	SetNextWindowBgAlpha(0.85f);
+
+	if (Begin("速度モニター", nullptr, windowFlags))
+	{
+		for (const auto& pObject : m_objects)
+		{
+			if (!pObject || !pObject->IsActive()) continue;
+			
+			auto* pCollider = Enabled<ColliderComponent>(*pObject);
+			auto* pMotion = Enabled<BallMotionComponent>(*pObject);
+			if (!pCollider || !pMotion) continue;
+
+			const GameRole role = pCollider->GetConfig().role;
+			if (pMotion)
+			{
+				if (role != GameRole::Player &&
+					role != GameRole::Enemy)
+					continue;
+
+				const BoardVec2 velocity = pMotion->GetVelocity();
+				const float currentSpeed =
+					sqrt(velocity.x * velocity.x +
+						 velocity.z * velocity.z);
+
+				const char* roleName =
+					role == GameRole::Player
+					? "PLAYER" 
+					: "ENEMY";
+
+				const ImVec4 textColor =
+					role == GameRole::Player
+					? ImVec4(0.35f, 0.8f, 1.0f, 1.0f)
+					: ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
+
+				PushStyleColor(ImGuiCol_Text, textColor);
+				Text(
+					"[%s] %s",
+					roleName,
+					pObject->GetName().c_str()
+				);
+				Text(
+					"現在の移動速度: %.2f",
+					currentSpeed
+				);
+				PopStyleColor();
+				Separator();
+			}
+		}
+
+		End();
+	}
 }
 #endif
