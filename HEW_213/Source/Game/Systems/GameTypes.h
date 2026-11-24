@@ -58,7 +58,8 @@ struct CollisionNotice
 {
 	GameObject* attacker = nullptr;
 	GameObject* target = nullptr;
-	int reflectionCount = 0; // 通知確定時の値
+	int reflectionCount = 0; // 反射回数
+	int attackLevel = 0; // 強化値
 };
 struct HudInput
 {

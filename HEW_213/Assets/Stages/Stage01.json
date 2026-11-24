@@ -418,7 +418,7 @@
                 },
                 {
                     "enabled": true,
-                    "maxHP": 1000,
+                    "maxHP": 5000,
                     "type": "Health"
                 }
             ],

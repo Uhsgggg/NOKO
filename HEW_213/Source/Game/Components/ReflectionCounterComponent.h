@@ -28,6 +28,11 @@ public:
     void Increment();
     int GetCount() const;
 
+    // ”½Ë‚ğ1‰ñ‹L˜^‚µ‚ÄAUŒ‚‹­‰»’l‚à‰ÁZ
+    void RecordReflection(int attackLevelGain);
+    // Œ»İ‚ÌUŒ‚‹­‰»’l‚ğæ“¾
+    int GetAttackLevel() const;
+
 private:
     // ÀÛ‚É‰½‰ñ”½Ë‚µ‚½‚©
     int m_reflectionCount = 0;

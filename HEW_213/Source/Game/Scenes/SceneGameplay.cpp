@@ -26,6 +26,7 @@ using namespace ImGui;
 #include <Windows.h>
 #include <cmath>
 #include <string>
+#include <climits>
 
 using namespace DirectX;
 using namespace std;
@@ -36,22 +37,31 @@ namespace
 	const char* const kStageFilePath =
 		"Assets/Stages/Stage01.json";
 
-	// プロトタイプの仮仕様。企画確定後に変更するところ
+	// 手数
 	constexpr int kShots = 10;
+	// 敵が追加されるまでのターン
 	constexpr int kWaveInterval = 3;
+	// 基礎ダメージ
 	constexpr float kBaseDamage = 10.0f;
+	// 反射倍率
 	constexpr float kReflectionMultiplier = 1.1f;
+	// 敵がボスに衝突した場合の倍率
+	constexpr int kEnemyBossDamageMultiplier = 3;
+
 	template <class T> T* Enabled(GameObject& o)
 	{
 		T* p = o.GetComponent<T>();
 		if (!p || !p->IsEnabled()) return nullptr;
 		return p;
 	}
+
+	// 引数で指定したGameObjectが、指定した役割を持っているか調べる
 	bool Role(GameObject& o, GameRole role)
 	{
 		auto* p = Enabled<ColliderComponent>(o);
 		return p && p->GetConfig().role == role;
 	}
+
 	GameObject* Player(const vector<unique_ptr<GameObject>>& objects)
 	{
 		for (const auto& p : objects)
@@ -245,17 +255,35 @@ void SceneGame::ApplyCollisionNotices(const vector<CollisionNotice>& notices)
 	for (const CollisionNotice& notice : notices)
 	{
 		GameObject* pTarget = notice.target;
+
 		if (!notice.attacker || !pTarget) continue;
 		if (!notice.attacker->IsActive() || !pTarget->IsActive()) continue;
+
 		auto* pHP = Enabled<HealthComponent>(*pTarget);
+
 		if (!pHP) continue;
 
-		const int calculatedDamage = 
+		int calculatedDamage =
 			DamageFormula::Calculate(
-				kBaseDamage, 
+				kBaseDamage,
 				kReflectionMultiplier,
-				notice.reflectionCount
+				notice.attackLevel
 			);
+
+		// 雑魚敵がボスに衝突した場合
+		if (Role(*notice.attacker, GameRole::Enemy) &&
+			Role(*pTarget, GameRole::Boss))
+		{
+			// int型の上限を超えないようにする
+			if (calculatedDamage > INT_MAX / kEnemyBossDamageMultiplier)
+			{
+				calculatedDamage = INT_MAX;
+			}
+			else
+			{
+				calculatedDamage *= kEnemyBossDamageMultiplier;
+			}
+		}
 
 		// 実際に減少したHPを記録
 		const int actualDamage = pHP->ApplyDamage(calculatedDamage);
@@ -263,14 +291,18 @@ void SceneGame::ApplyCollisionNotices(const vector<CollisionNotice>& notices)
 #ifdef _DEBUG
 		// 攻撃したGameObjectの履歴を取得
 		DamageDebugStats& stats = m_damageDebugStats[notice.attacker];
+
 		// 今回の攻撃情報を保存
 		stats.lastCalculateDamage = calculatedDamage;
 		stats.lastAppliedDamage = actualDamage;
 		stats.lastReflectionCount = notice.reflectionCount;
+
 		// 最後に攻撃した相手の名前
 		stats.lastTargetName = pTarget->GetName();
+
 		// 累計ダメージと攻撃回数
 		stats.totalAppliedDamage += actualDamage;
+
 		++stats.hitCount;
 #endif
 
@@ -369,28 +401,29 @@ bool SceneGame::SpawnEnemy()
 						break;
 					}
 				}
-				if (free)
+			}
+
+			if (free)
+			{
+				string name;
+				bool exists;
+				do
 				{
-					string name;
-					bool exists;
-					do
+					name = "WaveEnemy_" + to_string(++m_spawnSerial);
+					exists = false;
+					for (auto& o : m_objects)
 					{
-						name = "WaveEnemy_" + to_string(++m_spawnSerial);
-						exists = false;
-						for (auto& o : m_objects)
+						if (o && o->GetName() == name)
 						{
-							if (o && o->GetName() == name)
-							{
-								exists = true;
-							}
+							exists = true;
 						}
-					} while (exists);
-					p->SetName(name);
-					p->SetColor(XMFLOAT4(0, 1, 0, 1));
-					p->SaveInitialTransform();
-					m_objects.push_back(move(p));
-					return true;
-				}
+					}
+				} while (exists);
+				p->SetName(name);
+				p->SetColor(XMFLOAT4(0, 1, 0, 1));
+				p->SaveInitialTransform();
+				m_objects.push_back(move(p));
+				return true;
 			}
 		}
 	}
@@ -554,16 +587,21 @@ void SceneGame::DrawDamageMonitor()
 			// 反射回数のコンポーネントを取得
 			auto* pCounter = Enabled<ReflectionCounterComponent>(*pObject);
 
-			// 現在の反射回数を使ってダメージを計算
-			const int reflectionCount = 
+			// 現在の反射回数
+			const int reflectionCount =
 				pCounter ? pCounter->GetCount() : 0;
 
-			// 現在の攻撃力を計算
+			// 攻撃力計算用の強化値
+			const int attackLevel =
+				pCounter ? pCounter->GetAttackLevel() : 0;
+
+			// 現在の基本攻撃力
+			// ただし、敵がボスに攻撃したときの3倍補正は含まれない
 			const int currentDamage =
 				DamageFormula::Calculate(
 					kBaseDamage,
 					kReflectionMultiplier,
-					reflectionCount
+					attackLevel
 				);
 
 			// 保存済みの履歴を検索
@@ -584,33 +622,42 @@ void SceneGame::DrawDamageMonitor()
 				: ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
 			PushStyleColor(ImGuiCol_Text, textColor);
 
-			Text("[%s] %s", 
-				roleName, 
+			Text("[%s] %s",
+				roleName,
 				pObject->GetName().c_str()
 			);
-			Text("反射: %d　攻撃力: %d", 
-				reflectionCount, 
-				currentDamage
+			Text("反射: %d　強化値: %d",
+				reflectionCount, // 何回ぶつかったか
+				attackLevel // どのぐらい攻撃力が育ったか
+			);
+			Text("基本攻撃力: %d",
+				currentDamage // 現在の攻撃力
 			);
 
 			if (pStats)
 			{
-				Text("直近ダメージ: %d",
-					pStats->lastAppliedDamage
-				);
-				Text("累計ダメージ: %lld",
+				Text(
+					"直近: %d / 累計: %lld",
+					pStats->lastAppliedDamage,
 					pStats->totalAppliedDamage
 				);
+
+				/*Text("直近ダメージ: %d",
+					pStats->lastAppliedDamage // 直前に何ダメージ与えたか
+				);
+				Text("累計ダメージ: %lld",
+					pStats->totalAppliedDamage // 合計でどれだけ与えたか
+				);
 				Text("攻撃回数: %d",
-					pStats->hitCount
+					pStats->hitCount // 何回攻撃したか
 				);
 				Text("最後の攻撃対象: %s",
-					pStats->lastTargetName.c_str()
+					pStats->lastTargetName.c_str() // 誰を攻撃したか
 				);
 				Text("攻撃時の反射: %d / 計算値: %d",
-					pStats->lastReflectionCount,
-					pStats->lastCalculateDamage
-				);
+					pStats->lastReflectionCount, // 過去の攻撃が
+					pStats->lastCalculateDamage  // どれぐらい強かったか
+				);*/
 			}
 			else
 			{
@@ -641,7 +688,7 @@ void SceneGame::DrawMotionMonitor()
 		for (const auto& pObject : m_objects)
 		{
 			if (!pObject || !pObject->IsActive()) continue;
-			
+
 			auto* pCollider = Enabled<ColliderComponent>(*pObject);
 			auto* pMotion = Enabled<BallMotionComponent>(*pObject);
 			if (!pCollider || !pMotion) continue;
@@ -656,11 +703,11 @@ void SceneGame::DrawMotionMonitor()
 				const BoardVec2 velocity = pMotion->GetVelocity();
 				const float currentSpeed =
 					sqrt(velocity.x * velocity.x +
-						 velocity.z * velocity.z);
+						velocity.z * velocity.z);
 
 				const char* roleName =
 					role == GameRole::Player
-					? "PLAYER" 
+					? "PLAYER"
 					: "ENEMY";
 
 				const ImVec4 textColor =

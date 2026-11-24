@@ -270,6 +270,18 @@ static void PushOut(GameObject& object, BoardVec2 contactNormal, float distance)
 	object.GetTransform().position[2] += contactNormal.z * distance;
 }
 
+// 指定されたオブジェクトに反射と強化値を記録する
+// RegisterReflection(objectA, 2)なら反射1回・強化値+2になる
+static void RegisterReflection(GameObject& object, int attackLevelGain)
+{
+	auto* pCounter =
+		object.GetComponent<ReflectionCounterComponent>();
+
+	if (!pCounter || !pCounter->IsEnabled()) return;
+
+	pCounter->RecordReflection(attackLevelGain);
+}
+
 //--------------
 // 球同士の反射
 //--------------
@@ -322,12 +334,6 @@ static void BounceWall(
 
 	motion.SetVelocity(
 		CollisionSystem::Reflect(velocity, contactNormal, restitution));
-	
-	auto* pCounter = ball.GetComponent<ReflectionCounterComponent>();
-	if (pCounter && pCounter->IsEnabled())
-	{
-		pCounter->Increment();
-	}
 }
 
 
@@ -352,13 +358,18 @@ static void AddNotice(
 	vector<CollisionNotice>& outNotices)
 {
 	CollisionNotice notice;
+	
 	notice.attacker = &objectA;
 	notice.target = &objectB;
+
 	auto* pCounter = objectA.GetComponent<ReflectionCounterComponent>();
+
 	if (pCounter && pCounter->IsEnabled())
 	{
 		notice.reflectionCount = pCounter->GetCount();
+		notice.attackLevel = pCounter->GetAttackLevel();
 	}
+
 	outNotices.push_back(notice);
 }
 
@@ -447,6 +458,36 @@ void CollisionSystem::SolvePair(
 		BounceWall(objectB, *motionB,
 				   contactNormal, contact.penetration, restitution);
 	}
+
+	// 新しく衝突したか
+	// かつ、2つの物体が近づいていたか
+	const bool shouldCountReflection =
+		isNewContact && (normalSpeedA - normalSpeedB < 0.0f);
+
+	if (shouldCountReflection)
+	{
+		// 通常は反射1回につき強化値＋１
+		int attackLevelGain = 1;
+
+		// 雑魚敵同士の衝突なら強化値＋２
+		if (motionA && motionB &&
+			configA.role == GameRole::Enemy &&
+			configB.role == GameRole::Enemy)
+		{
+			attackLevelGain = 2;
+		}
+
+		// 動く物体だけ反射を記録
+		if (motionA)
+		{
+			RegisterReflection(objectA, attackLevelGain);
+		}
+		if (motionB)
+		{
+			RegisterReflection(objectB, attackLevelGain);
+		}
+	}
+
 	if (attackA)
 	{
 		AddNotice(objectA, objectB, outNotices);
